@@ -121,8 +121,12 @@ export default route(async (req, res) => {
 
   if (b.action === 'meta') {
     if (!b.key) return send(res, 400, { error: 'key is required.' });
-    await saveMeta(String(b.key), b.meta || {}, 'manual');
-    return send(res, 200, { meta: { ...cleanMeta(b.meta || {}), source: 'manual' } });
+    // Ticking a checklist box is not you overriding the AI's guess, so keep the source.
+    const source = b.source === 'checklist'
+      ? ((await metaFor([String(b.key)]))[String(b.key)]?.source || 'ai')
+      : 'manual';
+    await saveMeta(String(b.key), b.meta || {}, source);
+    return send(res, 200, { meta: { ...cleanMeta(b.meta || {}), source } });
   }
 
   send(res, 400, { error: 'Unknown action.' });

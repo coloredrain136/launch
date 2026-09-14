@@ -3,7 +3,7 @@ import { db, q } from './_lib/db.js';
 import { isConnected } from './_lib/google.js';
 
 const TABLES = {
-  templates: { t: 'launch_templates', cols: ['id', 'name', 'color_id', 'duration_min', 'default_start', 'priority', 'prep_min', 'prep_note', 'travel_min', 'add_travel', 'goal_id', 'sort'] },
+  templates: { t: 'launch_templates', cols: ['id', 'name', 'color_id', 'duration_min', 'default_start', 'priority', 'prep_min', 'prep_note', 'travel_min', 'add_travel', 'turnaround_min', 'checklist', 'goal_id', 'sort'] },
   reminders: { t: 'launch_reminders', cols: ['id', 'title', 'notes', 'due_date', 'due_time', 'priority', 'done', 'done_at'] },
   goals: { t: 'launch_goals', cols: ['id', 'title', 'category', 'type', 'frequency', 'per_week', 'target', 'current', 'start_value', 'unit', 'step', 'deadline', 'archived', 'sort'] },
   logs: { t: 'launch_goal_logs', cols: ['id', 'goal_id', 'day', 'value', 'note'] },
