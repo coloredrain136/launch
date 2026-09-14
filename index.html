@@ -1,0 +1,1370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1424">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Launch">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<title>Launch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#0d1424; --night-2:#141d31;
+  --ink:#eef2f8; --ink-2:#aab3c5; --ink-3:#6f7a91;
+  --line:rgba(255,255,255,.09); --glass:rgba(255,255,255,.055);
+  --dawn:#f2c46d; --dawn-ink:#1d1606; --danger:#ff6b61; --ok:#3ecf8e;
+  --serif:'Instrument Serif','Iowan Old Style',Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;
+  --sky:rgba(242,170,90,.24); --sky2:rgba(120,110,255,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:clip}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);background:var(--night);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased;line-height:1.4}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(130% 55% at 50% -12%,var(--sky) 0%,transparent 62%),radial-gradient(70% 45% at 105% 0%,var(--sky2),transparent 70%);transition:background 1.2s}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:inherit}
+input,select,textarea{font:inherit;color:var(--ink)}
+:focus-visible{outline:2px solid var(--dawn);outline-offset:2px;border-radius:10px}
+[hidden]{display:none!important}
+
+.glass{background:var(--glass);border:1px solid var(--line);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 12px 32px rgba(3,6,15,.32);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%)}
+
+.app{max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 18px calc(env(safe-area-inset-bottom) + 120px)}
+@media(min-width:1000px){.app{max-width:1120px;padding-left:32px;padding-right:32px}}
+
+/* header */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:10px 0 20px}
+.dayname{font-family:var(--serif);font-weight:400;font-size:46px;line-height:.95;letter-spacing:-.01em}
+.daydate{color:var(--ink-2);font-size:15px;margin-top:6px}
+.icon-btn{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--ink-2)}
+.icon-btn svg{width:20px;height:20px}
+.hdr-actions{display:flex;gap:8px}
+
+.today-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+@media(min-width:1000px){.today-grid{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:36px}}
+
+/* briefing */
+.brief{border-radius:26px;padding:22px 20px 16px}
+.brief h2{font-family:var(--serif);font-weight:400;font-size:31px;line-height:1.08;margin-bottom:10px;text-wrap:balance}
+.brief p{color:var(--ink-2);font-size:16px;line-height:1.5;max-width:62ch}
+.brief .btn{margin-top:16px}
+.brief.reveal{animation:rise .7s cubic-bezier(.2,.9,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.brief.thinking h2{animation:breathe 1.8s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.45}}
+.focus{list-style:none;margin-top:14px;display:grid;gap:8px}
+.focus li{display:flex;gap:10px;align-items:baseline;font-size:15px}
+.focus li::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--dawn);flex:none;transform:translateY(-1px)}
+.brief-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid var(--line);color:var(--ink-3);font-size:13px}
+.brief-foot .stale{color:var(--dawn)}
+.link-btn{color:var(--dawn);font-weight:600;font-size:14px;padding:6px 0;white-space:nowrap}
+
+/* next up */
+.next{display:grid;grid-template-columns:5px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 16px 14px 14px;border-radius:18px;margin-top:14px;width:100%}
+.next .rail{align-self:stretch;border-radius:3px;background:var(--c)}
+.next .when{font-size:13px;color:var(--ink-2)}
+.next .ttl{font-size:17px;font-weight:650;margin:2px 0}
+.next .lead-l{font-size:13px;color:var(--dawn)}
+.next .count{font-family:var(--serif);font-size:26px;line-height:1;text-align:right;color:var(--ink)}
+.next .count small{display:block;font-family:var(--sans);font-size:11px;color:var(--ink-3);margin-top:4px}
+
+/* sections */
+.sec{margin-top:28px}
+.sec h3{font-size:18px;font-weight:650;margin-bottom:10px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.sec-h h3{margin-bottom:6px}
+.muted{color:var(--ink-3);font-size:14px}
+.note-err{margin-top:14px;padding:12px 14px;border-radius:14px;background:rgba(255,107,97,.1);color:#ffb3ad;font-size:14px}
+
+/* lineup: the day rail */
+.allday{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px 70px}
+.chip{padding:6px 12px;border-radius:999px;font-size:13px;background:color-mix(in srgb,var(--c) 20%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
+.row{display:grid;grid-template-columns:58px 5px minmax(0,1fr);column-gap:12px;width:100%;cursor:pointer}
+.row .t{font-size:13px;color:var(--ink-2);padding-top:11px;text-align:right;font-variant-numeric:tabular-nums;line-height:1.25}
+.row .t small{display:block;color:var(--ink-3);font-size:11px}
+.row .rail{border-radius:3px;background:var(--c);margin:3px 0}
+.row .body{padding:9px 0 13px;min-width:0}
+.row .title{font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.row .sub{font-size:13px;color:var(--ink-3);margin-top:2px}
+.row.p3 .body{padding:13px 14px;margin:3px 0;border-radius:16px;background:color-mix(in srgb,var(--c) 13%,transparent);border:1px solid color-mix(in srgb,var(--c) 28%,transparent)}
+.row.p3 .title{font-size:19px;font-weight:700}
+.row.p1 .title{font-size:15px;font-weight:500;color:var(--ink-2)}
+.row.p1 .rail{opacity:.5}
+.row.p1 .body{padding-bottom:9px}
+.row.past{opacity:.42}
+.row.live .sub{color:var(--dawn)}
+.row.lead{cursor:default}
+.row.lead .t{padding-top:5px;color:var(--ink-3)}
+.row.lead .rail{background:repeating-linear-gradient(-45deg,var(--c) 0 3px,transparent 3px 7px);opacity:.85;margin:3px 0 0}
+.row.lead .body{padding:4px 0 6px;font-size:13px;color:var(--ink-2);line-height:1.5}
+.row.lead b{color:var(--ink);font-weight:600}
+.log-btn{margin-top:8px;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;background:color-mix(in srgb,var(--c) 22%,transparent);border:1px solid color-mix(in srgb,var(--c) 50%,transparent)}
+.logged{margin-top:6px;font-size:12px;color:var(--ok)}
+.now{display:grid;grid-template-columns:58px minmax(0,1fr);column-gap:12px;align-items:center;margin:4px 0}
+.now .t{color:var(--dawn);font-size:12px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.now .line{height:2px;background:var(--dawn);border-radius:2px;position:relative;margin-left:-5px}
+.now .line::before{content:'';position:absolute;left:0;top:50%;width:11px;height:11px;border-radius:50%;background:var(--dawn);transform:translate(-3px,-50%);box-shadow:0 0 0 5px rgba(242,196,109,.18)}
+.empty-day{color:var(--ink-3);font-size:15px;padding:8px 0 0 70px}
+
+/* coming up */
+.heads{display:grid;grid-template-columns:10px minmax(0,1fr);gap:12px;align-items:start;padding:10px 0;cursor:pointer;width:100%}
+.heads .dot{width:10px;height:10px;border-radius:50%;background:var(--c);margin-top:5px}
+.heads b{display:block;font-size:15px;font-weight:600}
+.heads small{display:block;color:var(--ink-3);font-size:13px;margin-top:2px}
+
+/* week strip */
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:6px;border-radius:20px}
+.wd{display:grid;justify-items:center;gap:3px;padding:8px 0 9px;border-radius:14px;color:var(--ink-2)}
+.wd span{font-size:11px}
+.wd b{font-size:18px;font-weight:600;color:var(--ink)}
+.wd i{display:flex;gap:3px;height:6px}
+.wd i em{width:5px;height:5px;border-radius:50%;background:var(--c)}
+.wd.today b{color:var(--dawn)}
+.wd.on{background:rgba(255,255,255,.12)}
+
+/* goals */
+.goal{padding:16px 16px 14px;border-radius:20px;margin-bottom:12px;cursor:pointer;display:block;width:100%}
+.goal .gt{display:flex;align-items:center;gap:10px}
+.goal .gt i{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.goal h4{font-size:17px;font-weight:650;flex:1;min-width:0;overflow-wrap:anywhere}
+.gnum{display:flex;align-items:baseline;gap:8px;margin-top:12px}
+.gnum .big{font-family:var(--serif);font-size:38px;line-height:1}
+.gnum .of{color:var(--ink-2);font-size:14px}
+.bar{height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;background:var(--c);border-radius:4px;transition:width .5s cubic-bezier(.2,.9,.2,1)}
+.dots{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.dots span{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.07);display:grid;place-items:center;font-size:11px;color:var(--ink-3)}
+.dots span.hit{background:var(--c);color:#08101f;font-weight:700}
+.dots span.today{box-shadow:inset 0 0 0 1.5px var(--ink-2)}
+.dots button span{pointer-events:none}
+.gfoot{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:var(--ink-3)}
+.pace.behind{color:var(--dawn)}
+.pace.done{color:var(--ok)}
+.chk-btn{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:650;background:color-mix(in srgb,var(--c) 22%,transparent);border:1px solid color-mix(in srgb,var(--c) 50%,transparent);flex:none}
+.chk-btn.on{background:var(--c);color:#08101f}
+.mini{display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer}
+.mini>div{flex:1;min-width:0}
+.mini b{display:block;font-size:15px;font-weight:600}
+.mini small{color:var(--dawn);font-size:13px}
+.empty-card{padding:22px 20px;border-radius:20px;text-align:left}
+.empty-card p{color:var(--ink-2);margin-bottom:14px}
+
+/* reminders */
+.qadd{display:flex;gap:6px;padding:6px 6px 6px 12px;border-radius:16px;align-items:center}
+.qadd input{flex:1;min-width:0;background:transparent;border:0;padding:10px 2px;font-size:16px;outline:none}
+.qadd input::placeholder{color:var(--ink-3)}
+.qa-go{padding:10px 16px;border-radius:12px;background:var(--dawn);color:var(--dawn-ink);font-weight:700}
+.qa-when{display:flex;gap:6px;margin:10px 0 4px;flex-wrap:wrap}
+.pill{padding:7px 13px;border-radius:999px;font-size:13px;border:1px solid var(--line);color:var(--ink-2)}
+.pill.on{background:rgba(242,196,109,.16);border-color:rgba(242,196,109,.55);color:var(--ink)}
+.rem{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start;padding:11px 0;border-bottom:1px solid var(--line)}
+.rem:last-child{border-bottom:0}
+.check{width:24px;height:24px;border-radius:50%;border:2px solid var(--ink-3);display:grid;place-items:center;margin-top:1px}
+.check svg{width:14px;height:14px}
+.check.on{background:var(--ok);border-color:var(--ok);color:#06140d}
+.rem-b{cursor:pointer;min-width:0}
+.rem-t{font-size:16px;overflow-wrap:anywhere}
+.rem.done .rem-t{color:var(--ink-3);text-decoration:line-through}
+.flag{color:var(--dawn);font-weight:800}
+.due{font-size:13px;color:var(--ink-3);margin-top:2px}
+.due.late{color:var(--danger)}
+.grp{margin-top:22px}
+.grp h3{font-size:14px;font-weight:600;color:var(--ink-2);margin-bottom:2px}
+
+/* tab bar */
+.tabs{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateX(-50%);display:flex;align-items:center;gap:2px;padding:6px;border-radius:999px;z-index:20;background:rgba(22,31,52,.72)}
+.tab{width:64px;height:52px;border-radius:999px;display:grid;place-items:center;align-content:center;gap:2px;color:var(--ink-3);font-size:10px;font-weight:600}
+.tab svg{width:22px;height:22px}
+.tab.on{color:var(--ink);background:rgba(255,255,255,.1)}
+.tab.add{width:52px;height:52px;background:var(--dawn);color:var(--dawn-ink);margin:0 6px}
+.tab.add svg{width:24px;height:24px}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:rgba(4,8,18,.55);opacity:0;pointer-events:none;transition:opacity .25s;z-index:40}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:90dvh;overflow:auto;overscroll-behavior:contain;border-radius:28px 28px 0 0;padding:10px 20px calc(env(safe-area-inset-bottom) + 26px);z-index:41;
+  transform:translateY(105%);transition:transform .42s cubic-bezier(.2,.9,.2,1.02);background:rgba(21,30,51,.9);
+  -webkit-backdrop-filter:blur(30px) saturate(170%);backdrop-filter:blur(30px) saturate(170%);border-top:1px solid var(--line)}
+.sheet.show{transform:none}
+@media(min-width:760px){
+  .sheet{left:50%;right:auto;bottom:auto;top:50%;width:520px;max-height:86dvh;border-radius:28px;border:1px solid var(--line);opacity:0;transform:translate(-50%,-46%) scale(.98);transition:transform .35s cubic-bezier(.2,.9,.2,1),opacity .2s;pointer-events:none}
+  .sheet.show{opacity:1;transform:translate(-50%,-50%);pointer-events:auto}
+}
+.grab{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin:0 auto 14px}
+.sheet h2{font-size:23px;font-weight:700;margin-bottom:4px;overflow-wrap:anywhere}
+.sheet .lede{color:var(--ink-2);font-size:14px;margin-bottom:18px}
+.sheet-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.sheet-h h2{flex:1;margin:0}
+.set{padding:16px 0;border-bottom:1px solid var(--line)}
+.set h3{font-size:16px;font-weight:650;margin-bottom:6px}
+.set .muted{margin-bottom:12px}
+.set-row{display:flex;align-items:center;gap:12px;width:100%;padding:11px 0;border-top:1px solid var(--line)}
+.set-row:first-of-type{border-top:0}
+.set-row i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.set-row span{flex:1;min-width:0}
+.set-row small{color:var(--ink-3)}
+
+.field{display:grid;gap:6px;margin-bottom:14px}
+.field>span{font-size:13px;color:var(--ink-2)}
+.inp{width:100%;background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;-webkit-appearance:none;appearance:none;min-height:46px}
+.inp:focus{outline:none;border-color:rgba(242,196,109,.6)}
+textarea.inp{resize:vertical;line-height:1.45}
+select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--ink-2) 50%),linear-gradient(135deg,var(--ink-2) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:36px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:rgba(255,255,255,.06);border-radius:12px;padding:3px;gap:3px}
+.seg button{padding:9px 4px;border-radius:9px;font-size:14px;color:var(--ink-2);text-align:center}
+.seg button.on{background:rgba(255,255,255,.15);color:var(--ink);font-weight:600}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);font-size:13px}
+.sw i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.sw.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0 14px;font-size:15px}
+.switch input{appearance:none;-webkit-appearance:none;width:48px;height:28px;border-radius:999px;background:rgba(255,255,255,.14);position:relative;flex:none;transition:background .2s}
+.switch input::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .22s cubic-bezier(.2,.9,.2,1.2)}
+.switch input:checked{background:var(--ok)}
+.switch input:checked::after{transform:translateX(20px)}
+details.more{margin:4px 0 14px;border:1px solid var(--line);border-radius:14px;padding:0 14px}
+details.more summary{padding:13px 0;font-size:15px;color:var(--ink-2);cursor:pointer;list-style:none}
+details.more summary::-webkit-details-marker{display:none}
+details.more[open] summary{margin-bottom:4px}
+.ai-tag{font-size:12px;color:var(--ink-3);margin-left:6px;font-weight:400}
+
+.btn{display:block;width:100%;padding:14px;border-radius:14px;background:var(--dawn);color:var(--dawn-ink);font-weight:700;font-size:16px;text-align:center}
+.btn.ghost{background:rgba(255,255,255,.09);color:var(--ink)}
+.btn.danger{background:transparent;color:var(--danger);font-weight:600}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.btn+.btn{margin-top:10px}
+.tgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.tpl{padding:13px 14px;border-radius:16px;background:color-mix(in srgb,var(--c) 11%,rgba(255,255,255,.03));border:1px solid color-mix(in srgb,var(--c) 32%,transparent);min-width:0}
+.tpl b{display:block;font-size:15px;font-weight:650;overflow-wrap:anywhere}
+.tpl small{color:var(--ink-3);font-size:12px}
+.ms{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.ms .x{color:var(--ink-3);font-size:20px;line-height:1;padding:4px 8px}
+.logs{margin-top:10px}
+.logs div{display:flex;justify-content:space-between;font-size:14px;color:var(--ink-2);padding:7px 0;border-bottom:1px solid var(--line)}
+
+/* login */
+.login{min-height:calc(100dvh - 140px);display:grid;align-content:center;gap:14px;max-width:360px;margin:0 auto}
+.login h1{font-family:var(--serif);font-weight:400;font-size:64px;line-height:.9}
+.login p{color:var(--ink-2);margin-bottom:8px}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 86px);transform:translate(-50%,16px);opacity:0;padding:11px 16px;border-radius:14px;background:rgba(30,40,64,.95);border:1px solid var(--line);font-size:14px;z-index:60;transition:opacity .2s,transform .3s cubic-bezier(.2,.9,.2,1);max-width:calc(100vw - 40px);pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{border-color:rgba(255,107,97,.5)}
+.loading{color:var(--ink-3);padding:18px 0}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="app" id="view"></main>
+<nav class="tabs glass" id="tabs" hidden aria-label="Main">
+  <button class="tab" data-act="tab" data-v="today" aria-label="Today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 17h18M6.5 17a5.5 5.5 0 0 1 11 0M12 5v2.5M5.2 8.2l1.7 1.7M18.8 8.2l-1.7 1.7"/></svg>Today</button>
+  <button class="tab" data-act="tab" data-v="schedule" aria-label="Schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Schedule</button>
+  <button class="tab add" data-act="add" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="tab" data-act="tab" data-v="goals" aria-label="Goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8" fill="currentColor"/></svg>Goals</button>
+  <button class="tab" data-act="tab" data-v="reminders" aria-label="Reminders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 7h11M9 12h11M9 17h11"/><circle cx="4.5" cy="7" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="17" r="1.2"/></svg>Reminders</button>
+</nav>
+<div class="scrim" id="scrim" data-act="close"></div>
+<section class="sheet" id="sheet" role="dialog" aria-modal="true"></section>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ============================================================
+   Launch v1 — schedule by priority + prep, goals, reminders,
+   and an AI morning game plan. Google Calendar is the data layer.
+   ============================================================ */
+
+// ---------- helpers ----------
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = (Math.random() * 16) | 0; return (c === 'x' ? r : (r & 3) | 8).toString(16); }));
+const pad = (n) => String(n).padStart(2, '0');
+const dayKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseDay = (k) => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const sod = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const sow = (d) => addDays(sod(d), -((d.getDay() + 6) % 7)); // Monday
+const todayKey = () => dayKey(new Date());
+const hhmm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const localIso = (d) => `${dayKey(d)}T${hhmm(d)}`;
+const atTime = (k, t) => { const d = parseDay(k); const [h, m] = t.split(':').map(Number); d.setHours(h, m, 0, 0); return d; };
+const fmtT = (d) => { let h = d.getHours(); const m = d.getMinutes(); const ap = h < 12 ? 'am' : 'pm'; h = h % 12 || 12; return m ? `${h}:${pad(m)}${ap}` : `${h}${ap}`; };
+const fmtDur = (min) => { min = Math.max(0, Math.round(min)); if (min < 60) return `${min}m`; const h = Math.floor(min / 60), m = min % 60; return m ? `${h}h ${m}m` : `${h}h`; };
+const WD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MO = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const fmtDay = (d) => `${WD[d.getDay()].slice(0, 3)}, ${MO[d.getMonth()].slice(0, 3)} ${d.getDate()}`;
+const relDay = (k) => {
+  const n = new Date();
+  if (k === dayKey(n)) return 'Today';
+  if (k === dayKey(addDays(n, 1))) return 'Tomorrow';
+  if (k === dayKey(addDays(n, -1))) return 'Yesterday';
+  const d = parseDay(k);
+  return (d - sod(n)) / 864e5 < 7 && d > n ? WD[d.getDay()] : fmtDay(d);
+};
+const fmtNum = (v, unit) => {
+  const n = Number(v) || 0;
+  const s = n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (!unit) return s;
+  return unit === '$' ? `$${s}` : `${s} ${unit}`;
+};
+const ICON = {
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  prev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>',
+};
+
+// Google's event colors, brightened for a dark UI. Your scheme:
+// INC red, Home Depot orange, fitness green, personal light blue,
+// family/social purple, travel/buffer gray, builds lavender.
+const CATS = {
+  '11': { name: 'INC', c: '#ff5a4f' },
+  '6': { name: 'Home Depot', c: '#ff8a3d' },
+  '2': { name: 'Fitness', c: '#3ecf8e' },
+  '7': { name: 'Personal', c: '#38b6ff' },
+  '3': { name: 'Family & social', c: '#b56cf0' },
+  '8': { name: 'Travel & buffer', c: '#8b93a3' },
+  '1': { name: 'Builds', c: '#8e9cff' },
+  '4': { name: 'Flamingo', c: '#f08a80' },
+  '5': { name: 'Banana', c: '#f6c945' },
+  '9': { name: 'Blueberry', c: '#5b6cf0' },
+  '10': { name: 'Basil', c: '#1fa463' },
+};
+const PICK = ['11', '6', '2', '7', '3', '1', '8'];
+const catOf = (id) => CATS[id] || { name: 'No color', c: '#7d8aa8' };
+const GOALCATS = {
+  fitness: { name: 'Fitness', c: '#3ecf8e' },
+  study: { name: 'Study', c: '#38b6ff' },
+  money: { name: 'Money', c: '#f6c945' },
+  habits: { name: 'Habits', c: '#b56cf0' },
+  work: { name: 'Work', c: '#ff5a4f' },
+  other: { name: 'Other', c: '#8b93a3' },
+};
+const goalCat = (g) => GOALCATS[g.category] || GOALCATS.other;
+
+// ---------- state ----------
+const S = {
+  token: localStorage.getItem('launch.token') || '',
+  view: 'today',
+  data: null,
+  google: false,
+  events: new Map(),
+  eventsReady: false,
+  triaged: new Set(),
+  triaging: false,
+  briefing: null,
+  briefingBusy: false,
+  briefRevealed: false,
+  weekStart: sow(new Date()),
+  selDay: todayKey(),
+  loadedWeeks: new Set(),
+  lastLoad: 0,
+  qaWhen: '',
+  errors: {},
+};
+
+// ---------- api ----------
+async function api(path, { method = 'GET', body } = {}) {
+  const r = await fetch(path, {
+    method,
+    headers: { Authorization: `Bearer ${S.token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  let j = {};
+  try { j = await r.json(); } catch {}
+  if (r.status === 401) { signOut(); throw new Error(j.error || 'Signed out.'); }
+  if (!r.ok) { const e = new Error(j.error || `Request failed (${r.status})`); e.code = j.code; throw e; }
+  return j;
+}
+const saveRow = async (table, row) => (await api('/api/data', { method: 'POST', body: { action: 'upsert', table, row } })).row;
+const delRow = (table, id) => api('/api/data', { method: 'POST', body: { action: 'delete', table, id } });
+
+function upsertLocal(table, row) {
+  const list = S.data[table];
+  const i = list.findIndex((x) => x.id === row.id);
+  if (i >= 0) list[i] = { ...list[i], ...row }; else list.push(row);
+}
+function removeLocal(table, id) { S.data[table] = S.data[table].filter((x) => x.id !== id); }
+
+let toastTimer;
+function toast(msg, err = false) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.toggle('err', err);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), err ? 4200 : 2200);
+}
+
+// ---------- sky follows the hour ----------
+function setSky() {
+  const h = new Date().getHours();
+  const [a, b] = h < 5 ? ['rgba(90,80,210,.20)', 'rgba(60,90,200,.10)']
+    : h < 10 ? ['rgba(242,170,90,.26)', 'rgba(255,120,150,.12)']
+    : h < 16 ? ['rgba(90,165,255,.20)', 'rgba(120,200,255,.10)']
+    : h < 19 ? ['rgba(255,125,90,.22)', 'rgba(190,90,220,.12)']
+    : ['rgba(140,95,230,.20)', 'rgba(70,90,210,.10)'];
+  document.documentElement.style.setProperty('--sky', a);
+  document.documentElement.style.setProperty('--sky2', b);
+}
+
+// ---------- events ----------
+function normEv(e) {
+  return { ...e, start: e.allDay ? parseDay(e.start) : new Date(e.start), end: e.allDay ? parseDay(e.end) : new Date(e.end) };
+}
+async function loadRange(d0, d1) {
+  const j = await api(`/api/calendar?from=${encodeURIComponent(d0.toISOString())}&to=${encodeURIComponent(d1.toISOString())}`);
+  const ids = new Set(j.events.map((e) => e.id));
+  for (const [id, e] of S.events) if (e.start < d1 && e.end > d0 && !ids.has(id)) S.events.delete(id);
+  for (const e of j.events) S.events.set(e.id, normEv(e));
+}
+function eventsOn(k) {
+  const d0 = parseDay(k), d1 = addDays(d0, 1);
+  return [...S.events.values()].filter((e) => e.start < d1 && e.end > d0).sort((a, b) => (b.allDay - a.allDay) || (a.start - b.start));
+}
+const pri = (e) => e.meta?.priority ?? 2;
+function leadOf(e) {
+  if (e.allDay || !e.meta) return null;
+  const prep = e.meta.prep_min || 0, travel = e.meta.travel_min || 0;
+  if (prep + travel === 0) return null;
+  if (prep + travel < 15 && pri(e) < 3) return null;
+  const leave = new Date(e.start - travel * 6e4);
+  const ready = new Date(leave - prep * 6e4);
+  return { prep, travel, ready, leave };
+}
+function headsUp() {
+  const out = [];
+  for (let i = 1; i <= 3; i++) {
+    const k = dayKey(addDays(new Date(), i));
+    for (const e of eventsOn(k)) {
+      if (dayKey(e.start) !== k && !e.allDay) continue;
+      if (pri(e) === 3 || (e.meta?.prep_min || 0) >= 45) out.push({ e, k });
+    }
+  }
+  return out.slice(0, 5);
+}
+function freeGaps(k) {
+  const d0 = parseDay(k);
+  const w0 = new Date(d0); w0.setHours(7, 0, 0, 0);
+  const w1 = new Date(d0); w1.setHours(22, 0, 0, 0);
+  const blocks = eventsOn(k).filter((e) => !e.allDay).map((e) => { const l = leadOf(e); return [+(l ? l.ready : e.start), +e.end]; }).sort((a, b) => a[0] - b[0]);
+  const gaps = [];
+  let cur = +w0;
+  for (const [s, e] of blocks) {
+    if (s - cur >= 30 * 6e4) gaps.push({ s: new Date(cur), e: new Date(Math.min(s, +w1)) });
+    cur = Math.max(cur, e);
+  }
+  if (+w1 - cur >= 30 * 6e4) gaps.push({ s: new Date(cur), e: w1 });
+  return gaps.filter((g) => g.e - g.s >= 30 * 6e4);
+}
+
+// ---------- goals ----------
+const activeGoals = () => (S.data?.goals || []).filter((g) => !g.archived);
+const goalById = (id) => (S.data?.goals || []).find((g) => g.id === id);
+const logsOf = (id) => (S.data?.logs || []).filter((l) => l.goal_id === id);
+const msOf = (id) => (S.data?.milestones || []).filter((m) => m.goal_id === id).sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+function paceFrac(g) {
+  if (!g.deadline) return null;
+  const c0 = new Date(g.created_at || Date.now()), dl = addDays(parseDay(g.deadline), 1);
+  return Math.max(0, Math.min(1, (Date.now() - c0) / Math.max(1, dl - c0)));
+}
+function goalStatus(g) {
+  const logs = logsOf(g.id);
+  if (g.type === 'number') {
+    const s = +g.start_value || 0, t = +g.target || 0, c = +g.current || 0;
+    const pct = t === s ? 0 : Math.max(0, Math.min(1, (c - s) / (t - s)));
+    const f = paceFrac(g);
+    const behind = pct < 1 && f != null && pct < f - 0.08;
+    const pace = pct >= 1 ? 'Done' : f == null ? '' : behind ? 'Behind pace' : 'On pace';
+    return { pct, behind, pace, text: `${fmtNum(c, g.unit)} of ${fmtNum(t, g.unit)}` };
+  }
+  if (g.type === 'milestone') {
+    const ms = msOf(g.id), done = ms.filter((m) => m.done).length;
+    const pct = ms.length ? done / ms.length : 0;
+    const f = paceFrac(g);
+    const behind = ms.length > 0 && pct < 1 && f != null && pct < f - 0.08;
+    const next = ms.find((m) => !m.done);
+    return { pct, behind, pace: pct >= 1 && ms.length ? 'Done' : behind ? 'Behind pace' : next ? `Next: ${next.title}` : 'Add steps to track', text: `${done} of ${ms.length} done` };
+  }
+  // streak
+  const days = new Set(logs.map((l) => l.day));
+  const t = todayKey();
+  if (g.frequency === 'weekly') {
+    const ws = sow(new Date());
+    let n = 0;
+    for (let i = 0; i < 7; i++) if (days.has(dayKey(addDays(ws, i)))) n++;
+    const need = Math.max(1, +g.per_week || 3);
+    const left = 7 - ((new Date().getDay() + 6) % 7); // days left incl. today
+    const behind = n < need && need - n >= left;
+    let weeks = n >= need ? 1 : 0;
+    for (let w = 1; w < 60; w++) {
+      const s = addDays(ws, -7 * w);
+      let c = 0;
+      for (let i = 0; i < 7; i++) if (days.has(dayKey(addDays(s, i)))) c++;
+      if (c >= need) weeks++; else break;
+    }
+    return { pct: Math.min(1, n / need), behind, n, need, weeks, pace: n >= need ? 'Week done' : behind ? `Need ${need - n} more, ${left} day${left === 1 ? '' : 's'} left` : `${need - n} to go this week`, text: `${n} of ${need} this week` };
+  }
+  let d = new Date();
+  if (!days.has(dayKey(d))) d = addDays(d, -1);
+  let n = 0;
+  while (days.has(dayKey(d))) { n++; d = addDays(d, -1); }
+  const doneToday = days.has(t);
+  return { pct: doneToday ? 1 : 0, behind: !doneToday, n, pace: doneToday ? 'Done today' : 'Not yet today', text: n === 1 ? '1 day' : `${n} days` };
+}
+async function toggleCheckin(g, day, note = '') {
+  const existing = logsOf(g.id).find((l) => l.day === day);
+  if (existing) {
+    removeLocal('logs', existing.id); render();
+    try { await delRow('logs', existing.id); } catch (e) { upsertLocal('logs', existing); render(); toast(e.message, true); }
+  } else {
+    const row = { id: uid(), goal_id: g.id, day, value: 1, note };
+    upsertLocal('logs', row); render();
+    try { await saveRow('logs', row); } catch (e) { removeLocal('logs', row.id); render(); toast(e.message, true); }
+  }
+}
+async function addToNumber(g, delta, note = '') {
+  const before = g.current;
+  g.current = (+g.current || 0) + delta;
+  const log = { id: uid(), goal_id: g.id, day: todayKey(), value: delta, note };
+  upsertLocal('logs', log); render();
+  try { await saveRow('goals', g); await saveRow('logs', log); }
+  catch (e) { g.current = before; removeLocal('logs', log.id); render(); toast(e.message, true); }
+}
+function eventLogged(e, g) {
+  const logs = logsOf(g.id);
+  if (logs.some((l) => l.note === `event:${e.id}`)) return true;
+  return g.type === 'streak' && logs.some((l) => l.day === dayKey(e.start));
+}
+async function logFromEvent(e) {
+  const g = goalById(e.goalId);
+  if (!g || eventLogged(e, g)) return;
+  if (g.type === 'number') await addToNumber(g, +g.step || 1, `event:${e.id}`);
+  else if (g.type === 'streak') await toggleCheckin(g, dayKey(e.start), `event:${e.id}`);
+  toast(`Logged to ${g.title}`);
+}
+
+// ---------- reminders ----------
+const openRems = () => (S.data?.reminders || []).filter((r) => !r.done);
+function isLate(r) {
+  if (!r.due_date || r.done) return false;
+  const t = todayKey();
+  if (r.due_date < t) return true;
+  return r.due_date === t && r.due_time && atTime(t, r.due_time) < new Date();
+}
+const dueText = (r) => (r.due_date ? relDay(r.due_date) + (r.due_time ? ` at ${fmtT(atTime(r.due_date, r.due_time))}` : '') : '');
+const remSort = (a, b) => (a.due_date || '9').localeCompare(b.due_date || '9') || (a.due_time || '99').localeCompare(b.due_time || '99') || (b.priority - a.priority);
+const remindersDue = () => openRems().filter((r) => isLate(r) || r.due_date === todayKey()).sort(remSort);
+async function toggleRem(id) {
+  const r = S.data.reminders.find((x) => x.id === id);
+  if (!r) return;
+  const prev = { done: r.done, done_at: r.done_at };
+  r.done = !r.done; r.done_at = r.done ? new Date().toISOString() : null;
+  render();
+  try { await saveRow('reminders', r); } catch (e) { Object.assign(r, prev); render(); toast(e.message, true); }
+}
+
+// ---------- AI: triage + morning plan ----------
+async function runTriage() {
+  if (S.triaging || !S.google) return;
+  const cutoff = Date.now() - 6 * 36e5, seen = new Set(), need = [];
+  for (const e of S.events.values()) {
+    if (e.meta || S.triaged.has(e.metaKey) || seen.has(e.metaKey) || e.end < cutoff) continue;
+    seen.add(e.metaKey); need.push(e);
+    if (need.length >= 40) break;
+  }
+  if (!need.length) return;
+  S.triaging = true;
+  need.forEach((e) => S.triaged.add(e.metaKey));
+  let ok = true;
+  try {
+    const j = await api('/api/ai', { method: 'POST', body: { action: 'triage', events: need.map((e) => ({
+      id: e.metaKey, title: e.title,
+      when: e.allDay ? `${fmtDay(e.start)}, all day` : `${fmtDay(e.start)} ${fmtT(e.start)}-${fmtT(e.end)}`,
+      category: catOf(e.colorId).name, location: e.location,
+    })) } });
+    const m = j.results || {};
+    for (const e of S.events.values()) if (m[e.metaKey]) e.meta = m[e.metaKey];
+    S.errors.ai = null;
+  } catch (err) { ok = false; S.errors.ai = err.message; }
+  S.triaging = false;
+  render();
+  if (ok) await runTriage();
+}
+function buildContext() {
+  const now = new Date(), k = dayKey(now);
+  const events = eventsOn(k).map((e) => {
+    const l = leadOf(e);
+    return {
+      title: e.title,
+      when: e.allDay ? 'all day' : `${fmtT(e.start)}-${fmtT(e.end)}`,
+      category: catOf(e.colorId).name,
+      priority: ['', 'low', 'normal', 'high'][pri(e)],
+      ...(l ? { get_ready_by: fmtT(l.ready) } : {}),
+      ...(l && l.travel ? { leave_by: fmtT(l.leave) } : {}),
+      ...(e.meta?.prep_note ? { prep: e.meta.prep_note } : {}),
+    };
+  });
+  return {
+    date: `${WD[now.getDay()]}, ${MO[now.getMonth()]} ${now.getDate()}`,
+    events,
+    coming_up: headsUp().map(({ e, k: dk }) => ({ day: relDay(dk), title: e.title, prep: e.meta?.prep_note || '', prep_minutes: e.meta?.prep_min || 0 })),
+    reminders: remindersDue().slice(0, 8).map((r) => ({ title: r.title, due: dueText(r), overdue: isLate(r) })),
+    goals: activeGoals().map((g) => { const s = goalStatus(g); return { title: g.title, progress: s.text, status: s.pace, behind: s.behind }; }),
+    open_time: freeGaps(k).map((g) => `${fmtT(g.s)}-${fmtT(g.e)}`),
+  };
+}
+function hashOf(ctx) {
+  const s = JSON.stringify(ctx.events) + JSON.stringify(ctx.coming_up);
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+async function ensureBriefing(force = false) {
+  if (!S.google || !S.eventsReady || S.triaging || S.briefingBusy) return;
+  const k = todayKey();
+  if (!force && S.briefing && S.briefing.day === k) return;
+  S.briefingBusy = true; S.errors.brief = null; render();
+  const ctx = buildContext();
+  try {
+    const j = await api('/api/ai', { method: 'POST', body: {
+      action: 'briefing', day: k, force, hash: hashOf(ctx), context: ctx,
+      now: new Date().toLocaleString([], { weekday: 'long', hour: 'numeric', minute: '2-digit' }),
+    } });
+    S.briefing = j.briefing; S.briefRevealed = false;
+  } catch (err) { S.errors.brief = err.message; }
+  S.briefingBusy = false;
+  render();
+}
+const briefingStale = () => S.briefing && S.briefing.hash && S.briefing.day === todayKey() && S.briefing.hash !== hashOf(buildContext());
+
+// ---------- loading ----------
+async function refreshAll() {
+  S.lastLoad = Date.now();
+  try {
+    S.data = await api('/api/data');
+    S.google = !!S.data.google?.connected;
+    S.errors.boot = null;
+  } catch (err) { S.errors.boot = err.message; render(); return; }
+  if (S.briefing && S.briefing.day !== todayKey()) S.briefing = null;
+  render();
+  if (!S.google) { S.eventsReady = true; render(); return; }
+  try {
+    const now = new Date();
+    await loadRange(addDays(sod(now), -1), addDays(sod(now), 8));
+    S.errors.events = null;
+  } catch (err) {
+    S.errors.events = err.message;
+    if (err.code === 'NOT_CONNECTED') S.google = false;
+  }
+  S.eventsReady = true;
+  S.loadedWeeks.clear();
+  render();
+  await runTriage();
+  ensureBriefing();
+}
+async function ensureWeek(ws) {
+  const key = dayKey(ws);
+  if (!S.google || S.loadedWeeks.has(key)) return;
+  S.loadedWeeks.add(key);
+  try { await loadRange(ws, addDays(ws, 7)); render(); runTriage(); }
+  catch (err) { S.loadedWeeks.delete(key); toast(err.message, true); }
+}
+
+// ---------- rendering ----------
+function render() {
+  const view = $('#view');
+  $('#tabs').hidden = !S.token;
+  if (!S.token) { view.innerHTML = loginHTML(); return; }
+  document.querySelectorAll('.tab[data-v]').forEach((b) => b.classList.toggle('on', b.dataset.v === S.view));
+  if (!S.data) {
+    view.innerHTML = S.errors.boot
+      ? `<div class="login"><h1>Launch</h1><p class="note-err">${esc(S.errors.boot)}</p><button class="btn ghost" data-act="retry">Try again</button></div>`
+      : `<p class="loading">Loading…</p>`;
+    return;
+  }
+  const y = window.scrollY;
+  view.innerHTML = S.view === 'schedule' ? viewSchedule() : S.view === 'goals' ? viewGoals() : S.view === 'reminders' ? viewReminders() : viewToday();
+  window.scrollTo(0, y);
+  const b = $('.brief.reveal');
+  if (b) S.briefRevealed = true;
+}
+
+function loginHTML() {
+  return `<form class="login" id="login-form" onsubmit="return false">
+    <h1>Launch</h1>
+    <p>Enter your passcode to open your day.</p>
+    <input class="inp" id="pass" type="password" autocomplete="current-password" placeholder="Passcode" enterkeyhint="go">
+    <button class="btn" data-act="login">Unlock</button>
+    <p class="muted" id="login-err"></p>
+  </form>`;
+}
+
+function headerHTML(title, sub, extra = '') {
+  return `<header class="top"><div><h1 class="dayname">${title}</h1><p class="daydate">${sub}</p></div><div class="hdr-actions">${extra}</div></header>`;
+}
+
+// Today
+function viewToday() {
+  const now = new Date(), k = todayKey();
+  let main = briefingHTML();
+  if (S.google) {
+    if (!S.eventsReady) main += `<p class="loading">Loading your calendar…</p>`;
+    else {
+      if (S.errors.events) main += `<p class="note-err">${esc(S.errors.events)}</p>`;
+      const n = nextUp();
+      if (n) main += nextHTML(n);
+      main += `<section class="sec"><h3>Today</h3>${lineupHTML(k)}</section>`;
+    }
+  }
+  return headerHTML(WD[now.getDay()], `${MO[now.getMonth()]} ${now.getDate()}`, `<button class="icon-btn glass" data-act="settings" aria-label="Settings">${ICON.gear}</button>`)
+    + `<div class="today-grid"><div>${main}</div><div>${sideHTML()}</div></div>`;
+}
+function briefingHTML() {
+  if (!S.google) {
+    return `<section class="brief glass"><h2>Connect Google Calendar to plan your day.</h2><p>Launch reads your calendar and adds events to it. You won't need to open Google Calendar yourself.</p><button class="btn" data-act="connect">Connect Google Calendar</button></section>`;
+  }
+  if (!S.eventsReady || (S.briefingBusy && !S.briefing) || (S.triaging && !S.briefing)) {
+    return `<section class="brief glass thinking"><h2>Planning your day…</h2><p>Reading your calendar, reminders, and goals.</p></section>`;
+  }
+  if (!S.briefing) {
+    return `<section class="brief glass"><h2>Your plan isn't ready.</h2><p>${esc(S.errors.brief || S.errors.ai || 'Make today\'s plan when you\'re ready.')}</p><button class="btn ghost" data-act="brief-refresh">Make today's plan</button></section>`;
+  }
+  const b = S.briefing, stale = briefingStale();
+  const reveal = !S.briefRevealed ? ' reveal' : '';
+  return `<section class="brief glass${reveal}">
+    <h2>${esc(b.headline)}</h2>
+    <p>${esc(b.plan)}</p>
+    ${(b.focus || []).length ? `<ul class="focus">${b.focus.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+    <div class="brief-foot">
+      <span class="${stale ? 'stale' : ''}">${S.briefingBusy ? 'Updating…' : stale ? 'Your calendar changed since this plan.' : `Planned at ${fmtT(new Date(b.created_at))}`}</span>
+      <button class="link-btn" data-act="brief-refresh" ${S.briefingBusy ? 'disabled' : ''}>Refresh plan</button>
+    </div>
+    ${S.errors.brief ? `<p class="note-err">${esc(S.errors.brief)}</p>` : ''}
+  </section>`;
+}
+function nextUp() {
+  const now = new Date();
+  return eventsOn(todayKey()).filter((e) => !e.allDay && e.end > now)[0];
+}
+function nextHTML(e) {
+  const now = new Date(), c = catOf(e.colorId).c, live = e.start <= now, l = leadOf(e);
+  const mins = Math.round(((live ? e.end : (l ? l.ready : e.start)) - now) / 6e4);
+  const countLabel = live ? 'left' : l ? 'until get ready' : 'until start';
+  let leadLine = '';
+  if (!live && l) leadLine = `<div class="lead-l">${l.prep ? `Get ready by ${fmtT(l.ready)}` : ''}${l.prep && l.travel ? ', ' : ''}${l.travel ? `leave by ${fmtT(l.leave)}` : ''}</div>`;
+  return `<div class="next glass" style="--c:${c}" role="button" tabindex="0" data-act="ev" data-id="${esc(e.id)}">
+    <span class="rail"></span>
+    <div><div class="when">${live ? `Now, until ${fmtT(e.end)}` : `Next at ${fmtT(e.start)}`}</div><div class="ttl">${esc(e.title)}</div>${leadLine}</div>
+    <div class="count">${fmtDur(Math.max(0, mins))}<small>${countLabel}</small></div>
+  </div>`;
+}
+function lineupHTML(k) {
+  const list = eventsOn(k), all = list.filter((e) => e.allDay), timed = list.filter((e) => !e.allDay);
+  const now = new Date(), isToday = k === todayKey();
+  let h = '';
+  if (all.length) h += `<div class="allday">${all.map((e) => `<button class="chip" style="--c:${catOf(e.colorId).c}" data-act="ev" data-id="${esc(e.id)}">${esc(e.title)}</button>`).join('')}</div>`;
+  if (!timed.length) return h + `<p class="empty-day">${all.length ? 'Nothing else scheduled.' : 'Nothing on the calendar.'} <button class="link-btn" data-act="add">Add something</button></p>`;
+  let placed = !isToday;
+  for (const e of timed) {
+    const l = leadOf(e), c = catOf(e.colorId).c, past = e.end < now;
+    const edge = l ? l.ready : e.start;
+    if (!placed && edge > now) { h += nowHTML(now); placed = true; }
+    if (l && !past && dayKey(l.ready) === k) {
+      const parts = [];
+      if (l.prep) parts.push(`<b>Get ready</b>${e.meta?.prep_note ? `: ${esc(e.meta.prep_note)}` : `, ${fmtDur(l.prep)}`}`);
+      if (l.travel) parts.push(`<b>Leave by ${fmtT(l.leave)}</b>, ${fmtDur(l.travel)} drive`);
+      h += `<div class="row lead" style="--c:${c}"><span class="t">${fmtT(l.ready)}</span><span class="rail"></span><div class="body">${parts.join('<br>')}</div></div>`;
+    }
+    h += evRow(e, c, past, now);
+  }
+  if (!placed) h += nowHTML(now);
+  return h;
+}
+const nowHTML = (now) => `<div class="now" aria-label="Now"><span class="t">${fmtT(now)}</span><span class="line"></span></div>`;
+function evRow(e, c, past, now) {
+  const live = !past && e.start <= now;
+  const g = e.goalId && goalById(e.goalId);
+  let extra = '';
+  if (g && e.end < now) extra = eventLogged(e, g) ? `<div class="logged">Logged to ${esc(g.title)}</div>` : `<button class="log-btn" data-act="log-ev" data-id="${esc(e.id)}">Log to ${esc(g.title)}</button>`;
+  const sub = live ? `Happening now, ends ${fmtT(e.end)}` : (e.location || '');
+  const startsEarlier = dayKey(e.start) !== dayKey(e.end) && e.start < parseDay(dayKey(now));
+  return `<div class="row p${pri(e)}${past ? ' past' : ''}${live ? ' live' : ''}" style="--c:${c}" role="button" tabindex="0" data-act="ev" data-id="${esc(e.id)}">
+    <span class="t">${startsEarlier ? 'cont.' : fmtT(e.start)}<small>${fmtT(e.end)}</small></span><span class="rail"></span>
+    <div class="body"><div class="title">${esc(e.title)}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}${extra}</div>
+  </div>`;
+}
+function sideHTML() {
+  let h = '';
+  const heads = S.google && S.eventsReady ? headsUp() : [];
+  if (heads.length) {
+    h += `<section class="sec"><h3>Coming up</h3>${heads.map(({ e, k }) => {
+      const prep = e.meta?.prep_min || 0, note = e.meta?.prep_note;
+      const sub = prep >= 60 ? `Prep the night before${note ? `: ${note}` : ''}` : prep ? `Get ready ${fmtDur(prep)}${note ? `: ${note}` : ''}` : (e.allDay ? 'All day' : fmtT(e.start));
+      return `<div class="heads" role="button" tabindex="0" data-act="ev" data-id="${esc(e.id)}"><span class="dot" style="--c:${catOf(e.colorId).c}"></span><div><b>${esc(relDay(k))}: ${esc(e.title)}</b><small>${esc(sub)}</small></div></div>`;
+    }).join('')}</section>`;
+  }
+  const due = remindersDue();
+  h += `<section class="sec"><div class="sec-h"><h3>Reminders</h3><button class="link-btn" data-act="tab" data-v="reminders">See all</button></div>${due.length ? due.map(remRow).join('') : '<p class="muted">Nothing due today.</p>'}</section>`;
+  const risk = activeGoals().filter((g) => goalStatus(g).behind).slice(0, 3);
+  if (risk.length) {
+    h += `<section class="sec"><h3>Goals that need you</h3>${risk.map((g) => {
+      const s = goalStatus(g), c = goalCat(g).c;
+      const quick = g.type === 'streak' ? `<button class="chk-btn" style="--c:${c}" data-act="goal-check" data-id="${g.id}">Check in</button>` : '';
+      return `<div class="mini" style="--c:${c}"><div role="button" tabindex="0" data-act="goal-open" data-id="${g.id}"><b>${esc(g.title)}</b><small>${esc(s.pace || s.text)}</small></div>${quick}</div>`;
+    }).join('')}</section>`;
+  }
+  return h;
+}
+function remRow(r) {
+  const late = isLate(r), d = dueText(r);
+  return `<div class="rem${r.done ? ' done' : ''}">
+    <button class="check${r.done ? ' on' : ''}" data-act="rem-check" data-id="${r.id}" aria-label="${r.done ? 'Mark not done' : 'Mark done'}">${r.done ? ICON.tick : ''}</button>
+    <div class="rem-b" role="button" tabindex="0" data-act="rem-open" data-id="${r.id}">
+      <div class="rem-t">${r.priority >= 3 ? '<span class="flag">!</span> ' : ''}${esc(r.title)}</div>
+      ${d ? `<div class="due${late ? ' late' : ''}">${esc(d)}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+// Schedule
+function viewSchedule() {
+  const ws = S.weekStart, we = addDays(ws, 6);
+  const label = `${MO[ws.getMonth()].slice(0, 3)} ${ws.getDate()} to ${ws.getMonth() !== we.getMonth() ? MO[we.getMonth()].slice(0, 3) + ' ' : ''}${we.getDate()}`;
+  const isThisWeek = dayKey(ws) === dayKey(sow(new Date()));
+  const strip = [...Array(7)].map((_, i) => {
+    const d = addDays(ws, i), k = dayKey(d);
+    const colors = [...new Set(eventsOn(k).sort((a, b) => pri(b) - pri(a)).map((e) => catOf(e.colorId).c))].slice(0, 4);
+    return `<button class="wd${k === S.selDay ? ' on' : ''}${k === todayKey() ? ' today' : ''}" data-act="day-sel" data-k="${k}" aria-label="${fmtDay(d)}"><span>${WD[d.getDay()].slice(0, 3)}</span><b>${d.getDate()}</b><i>${colors.map((c) => `<em style="--c:${c}"></em>`).join('')}</i></button>`;
+  }).join('');
+  const nav = `${isThisWeek ? '' : '<button class="link-btn" data-act="week-now" style="margin-right:6px">This week</button>'}<button class="icon-btn glass" data-act="week-prev" aria-label="Previous week">${ICON.prev}</button><button class="icon-btn glass" data-act="week-next" aria-label="Next week">${ICON.next}</button>`;
+  let body;
+  if (!S.google) body = `<div class="empty-card glass"><p>Connect Google Calendar to see your schedule.</p><button class="btn" data-act="connect">Connect Google Calendar</button></div>`;
+  else if (!S.loadedWeeks.has(dayKey(ws)) && !S.eventsReady) body = '<p class="loading">Loading…</p>';
+  else body = `<section class="sec"><h3>${esc(relDay(S.selDay))}</h3>${lineupHTML(S.selDay)}</section>`;
+  return headerHTML('Schedule', label, nav) + `<div class="week glass">${strip}</div>` + body;
+}
+
+// Goals
+function viewGoals() {
+  const goals = activeGoals();
+  const add = `<button class="icon-btn glass" data-act="goal-new" aria-label="New goal">${ICON.plus}</button>`;
+  const sub = goals.length ? `${goals.length} active` : 'Track anything you’re working toward';
+  if (!goals.length) return headerHTML('Goals', sub, add) + `<div class="empty-card glass"><p>Add a goal to start tracking progress: savings, study streaks, a checklist, anything.</p><button class="btn" data-act="goal-new">New goal</button></div>`;
+  return headerHTML('Goals', sub, add) + goals.map(goalCard).join('');
+}
+function goalCard(g) {
+  const s = goalStatus(g), c = goalCat(g).c;
+  let mid = '';
+  if (g.type === 'number') {
+    mid = `<div class="gnum"><span class="big">${esc(fmtNum(g.current, g.unit === '$' ? '$' : ''))}</span><span class="of">of ${esc(fmtNum(g.target, g.unit))}</span></div><div class="bar"><i style="width:${(s.pct * 100).toFixed(1)}%"></i></div>`;
+  } else if (g.type === 'milestone') {
+    mid = `<div class="gnum"><span class="big">${msOf(g.id).filter((m) => m.done).length}</span><span class="of">of ${msOf(g.id).length} steps</span></div><div class="bar"><i style="width:${(s.pct * 100).toFixed(1)}%"></i></div>`;
+  } else {
+    mid = `<div class="gnum"><span class="big">${g.frequency === 'weekly' ? `${s.n}/${s.need}` : s.n}</span><span class="of">${g.frequency === 'weekly' ? `this week${s.weeks > 1 ? `, ${s.weeks} weeks in a row` : ''}` : 'day streak'}</span></div>${streakDots(g, false)}`;
+  }
+  const quick = g.type === 'streak' ? `<button class="chk-btn${logsOf(g.id).some((l) => l.day === todayKey()) ? ' on' : ''}" data-act="goal-check" data-id="${g.id}">${logsOf(g.id).some((l) => l.day === todayKey()) ? 'Done today' : 'Check in'}</button>` : '';
+  const due = g.deadline ? `Due ${fmtDay(parseDay(g.deadline))}` : '';
+  return `<div class="goal glass" style="--c:${c}" role="button" tabindex="0" data-act="goal-open" data-id="${g.id}">
+    <div class="gt"><i></i><h4>${esc(g.title)}</h4>${quick}</div>
+    ${mid}
+    <div class="gfoot"><span class="pace${s.behind ? ' behind' : ''}${/done/i.test(s.pace) ? ' done' : ''}">${esc(s.pace)}</span><span>${esc(due)}</span></div>
+  </div>`;
+}
+function streakDots(g, tappable, span = 7) {
+  const days = new Set(logsOf(g.id).map((l) => l.day));
+  const start = g.frequency === 'weekly' && span === 7 ? sow(new Date()) : addDays(sod(new Date()), -(span - 1));
+  const t = todayKey();
+  let h = '';
+  for (let i = 0; i < span; i++) {
+    const d = addDays(start, i), k = dayKey(d);
+    const inner = `<span class="${days.has(k) ? 'hit' : ''}${k === t ? ' today' : ''}">${WD[d.getDay()][0]}</span>`;
+    const future = k > t;
+    h += tappable && !future ? `<button data-act="goal-day" data-id="${g.id}" data-k="${k}" aria-label="${fmtDay(d)}">${inner}</button>` : inner;
+  }
+  return `<div class="dots">${h}</div>`;
+}
+
+// Reminders
+function viewReminders() {
+  const open = openRems(), t = todayKey();
+  const late = open.filter(isLate).sort(remSort);
+  const today = open.filter((r) => r.due_date === t && !isLate(r)).sort(remSort);
+  const later = open.filter((r) => r.due_date && r.due_date > t).sort(remSort);
+  const anytime = open.filter((r) => !r.due_date).sort((a, b) => b.priority - a.priority);
+  const done = (S.data.reminders || []).filter((r) => r.done).sort((a, b) => (b.done_at || '').localeCompare(a.done_at || '')).slice(0, 10);
+  const grp = (title, list) => (list.length ? `<div class="grp"><h3>${title}</h3>${list.map(remRow).join('')}</div>` : '');
+  const when = [['', 'No date'], ['today', 'Today'], ['tomorrow', 'Tomorrow']].map(([v, l]) => `<button class="pill${S.qaWhen === v ? ' on' : ''}" data-act="qa-when" data-v="${v}">${l}</button>`).join('')
+    + `<button class="pill" data-act="rem-new">Pick date and time</button>`;
+  const body = open.length || done.length
+    ? grp('Overdue', late) + grp('Today', today) + grp('Upcoming', later) + grp('Anytime', anytime) + grp('Done recently', done)
+    : `<p class="muted" style="margin-top:22px">No reminders. Add one above.</p>`;
+  return headerHTML('Reminders', `${open.length} open`) + `<div class="qadd glass"><input id="qa" placeholder="Add a reminder" enterkeyhint="done" autocomplete="off"><button class="qa-go" data-act="qa-add">Add</button></div><div class="qa-when">${when}</div>` + body;
+}
+
+// ---------- sheets ----------
+function openSheet(html) {
+  const sh = $('#sheet');
+  sh.innerHTML = `<div class="grab"></div>${html}`;
+  sh.scrollTop = 0;
+  $('#scrim').classList.add('show');
+  requestAnimationFrame(() => sh.classList.add('show'));
+}
+function closeSheet() { $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); }
+const val = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+const num = (id, d = 0) => { const n = Number(val(id)); return Number.isFinite(n) && val(id) !== '' ? n : d; };
+const segVal = (id) => $(`#${id} button.on`)?.dataset.v ?? '';
+const segHTML = (id, opts, cur) => `<div class="seg" id="${id}" data-seg>${opts.map(([v, l]) => `<button type="button" data-act="seg" data-v="${v}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+const swHTML = (id, cur, list = PICK, map = CATS) => `<div class="swatches" id="${id}" data-seg>${list.map((k) => `<button type="button" class="sw${k === cur ? ' on' : ''}" style="--c:${map[k].c}" data-act="seg" data-v="${k}"><i></i>${map[k].name}</button>`).join('')}</div>`;
+const goalOptions = (cur) => `<option value="">None</option>` + activeGoals().map((g) => `<option value="${g.id}" ${g.id === cur ? 'selected' : ''}>${esc(g.title)}</option>`).join('');
+
+// Add sheet
+function openAdd() {
+  const tpls = S.data?.templates || [];
+  openSheet(`<h2>Add to your day</h2><p class="lede">Pick a template for the fast version.</p>
+    ${S.google ? `<div class="tgrid">${tpls.map((t) => `<button class="tpl" style="--c:${catOf(t.color_id).c}" data-act="tpl-use" data-id="${t.id}"><b>${esc(t.name)}</b><small>${fmtDur(t.duration_min)}${t.default_start ? `, ${fmtT(atTime(todayKey(), t.default_start))}` : ''}</small></button>`).join('')}</div>
+    <button class="btn ghost" data-act="ev-custom">Custom event</button>` : `<p class="muted" style="margin-bottom:12px">Connect Google Calendar to add events.</p>`}
+    <button class="btn ghost" data-act="rem-new">Reminder</button>
+    <button class="btn ghost" data-act="goal-new">Goal</button>`);
+}
+
+// New event form (from template or custom)
+let draft = null;
+function openEventForm(tpl) {
+  const baseDay = S.view === 'schedule' ? S.selDay : todayKey();
+  let start;
+  if (tpl?.default_start) start = atTime(baseDay, tpl.default_start);
+  else {
+    const n = new Date();
+    start = baseDay === todayKey() ? new Date(n) : atTime(baseDay, `${pad(n.getHours())}:00`);
+    start.setMinutes(Math.ceil((start.getMinutes() + 1) / 30) * 30, 0, 0);
+  }
+  const end = new Date(start.getTime() + (tpl?.duration_min || 60) * 6e4);
+  draft = { tpl };
+  const hasTravel = (tpl?.travel_min || 0) > 0;
+  openSheet(`<div class="sheet-h"><button class="icon-btn" data-act="add" aria-label="Back">${ICON.back}</button><h2>${tpl ? esc(tpl.name) : 'New event'}</h2></div>
+    <label class="field"><span>Title</span><input class="inp" id="ef-title" value="${esc(tpl?.name || '')}" placeholder="What is it?"></label>
+    ${tpl ? '' : `<label class="switch">All day<input type="checkbox" id="ef-allday" data-act="ef-allday"></label>`}
+    <label class="field"><span>Date</span><input class="inp" type="date" id="ef-date" value="${dayKey(start)}"></label>
+    <div class="two" id="ef-times"><label class="field"><span>Starts</span><input class="inp" type="time" id="ef-start" value="${hhmm(start)}" data-act="ef-start"></label><label class="field"><span>Ends</span><input class="inp" type="time" id="ef-end" value="${hhmm(end)}"></label></div>
+    <label class="field"><span>Location</span><input class="inp" id="ef-loc" placeholder="Optional"></label>
+    <div class="field"><span>Category</span>${swHTML('ef-color', tpl?.color_id || '7')}</div>
+    <div class="field"><span>Priority</span>${segHTML('ef-pri', [[0, 'Auto'], [1, 'Low'], [2, 'Normal'], [3, 'High']], tpl ? tpl.priority : 0)}</div>
+    <details class="more" ${tpl && (tpl.prep_min || tpl.travel_min) ? '' : ''}><summary>Prep and travel</summary>
+      <div class="two"><label class="field"><span>Get ready (min)</span><input class="inp" type="number" inputmode="numeric" id="ef-prep" value="${tpl?.prep_min || ''}" placeholder="0"></label><label class="field"><span>Drive (min)</span><input class="inp" type="number" inputmode="numeric" id="ef-travel" value="${tpl?.travel_min || ''}" placeholder="0"></label></div>
+      <label class="field"><span>Prep note</span><input class="inp" id="ef-note" value="${esc(tpl?.prep_note || '')}" placeholder="e.g. Pack paddle, water"></label>
+      <label class="switch">Block drive time on calendar<input type="checkbox" id="ef-block" ${tpl?.add_travel && hasTravel ? 'checked' : ''}></label>
+    </details>
+    <label class="field"><span>Counts toward goal</span><select class="inp" id="ef-goal">${goalOptions(tpl?.goal_id || '')}</select></label>
+    <button class="btn" data-act="ef-save">Add to calendar</button>`);
+}
+async function saveEventForm(btn) {
+  const title = val('ef-title');
+  if (!title) return toast('Give it a title first.', true);
+  const date = val('ef-date');
+  if (!date) return toast('Pick a date.', true);
+  const allDay = !!$('#ef-allday')?.checked;
+  const tpl = draft?.tpl;
+  let start, end, s, e;
+  if (allDay) { start = date; end = dayKey(addDays(parseDay(date), 1)); }
+  else {
+    const st = val('ef-start'), en = val('ef-end');
+    if (!st || !en) return toast('Set a start and end time.', true);
+    s = atTime(date, st); e = atTime(date, en);
+    if (e <= s) e = addDays(e, 1);
+    start = localIso(s); end = localIso(e);
+  }
+  const p = Number(segVal('ef-pri')) || 0;
+  const prep = num('ef-prep'), travel = num('ef-travel'), note = val('ef-note');
+  let meta = null;
+  if (p > 0) meta = { priority: p, prep_min: prep, travel_min: travel, prep_note: note, source: tpl ? 'template' : 'manual' };
+  else if (prep || travel || note) meta = { priority: 2, prep_min: prep, travel_min: travel, prep_note: note, source: 'manual' };
+  const travelBlock = !allDay && $('#ef-block')?.checked && travel > 0
+    ? { start: localIso(new Date(s - travel * 6e4)), end: start, title: `Drive: ${title}` } : null;
+  btn.disabled = true; btn.textContent = 'Adding…';
+  try {
+    const j = await api('/api/calendar', { method: 'POST', body: { action: 'create', event: { title, start, end, allDay, colorId: segVal('ef-color'), location: val('ef-loc'), goalId: val('ef-goal') || null, templateId: tpl?.id || null }, meta, travel: travelBlock } });
+    S.events.set(j.event.id, normEv(j.event));
+    if (j.travel) S.events.set(j.travel.id, normEv(j.travel));
+    closeSheet(); render(); toast('Added to calendar');
+    runTriage();
+  } catch (err) { btn.disabled = false; btn.textContent = 'Add to calendar'; toast(err.message, true); }
+}
+
+// Existing event
+function openEventSheet(id) {
+  const e = S.events.get(id);
+  if (!e) return;
+  const cat = catOf(e.colorId), m = e.meta || {};
+  const when = e.allDay ? `${fmtDay(e.start)}, all day` : `${fmtDay(e.start)}, ${fmtT(e.start)} to ${fmtT(e.end)}`;
+  const g = e.goalId && goalById(e.goalId);
+  openSheet(`<div class="sheet-h"><span class="dot" style="width:12px;height:12px;border-radius:50%;background:${cat.c};flex:none"></span><h2>${esc(e.title)}</h2></div>
+    <p class="lede">${esc(when)}${e.location ? `<br>${esc(e.location)}` : ''}</p>
+    ${g && e.end < new Date() && !eventLogged(e, g) ? `<button class="btn" data-act="log-ev" data-id="${esc(e.id)}" style="margin-bottom:16px">Log to ${esc(g.title)}</button>` : ''}
+    <div class="field"><span>Priority${m.source === 'ai' ? '<span class="ai-tag">AI guess</span>' : ''}</span>${segHTML('es-pri', [[1, 'Low'], [2, 'Normal'], [3, 'High']], m.priority || 2)}</div>
+    <div class="two"><label class="field"><span>Get ready (min)</span><input class="inp" type="number" inputmode="numeric" id="es-prep" value="${m.prep_min || ''}" placeholder="0"></label><label class="field"><span>Drive (min)</span><input class="inp" type="number" inputmode="numeric" id="es-travel" value="${m.travel_min || ''}" placeholder="0"></label></div>
+    <label class="field"><span>Prep note</span><input class="inp" id="es-note" value="${esc(m.prep_note || '')}" placeholder="What to bring or do first"></label>
+    ${e.recurring ? '<p class="muted" style="margin:-4px 0 14px">Priority and prep apply to every repeat of this event.</p>' : ''}
+    <details class="more"><summary>Edit title and time</summary>
+      <label class="field"><span>Title</span><input class="inp" id="es-title" value="${esc(e.title)}"></label>
+      ${e.allDay ? '' : `<label class="field"><span>Date</span><input class="inp" type="date" id="es-date" value="${dayKey(e.start)}"></label>
+      <div class="two"><label class="field"><span>Starts</span><input class="inp" type="time" id="es-start" value="${hhmm(e.start)}"></label><label class="field"><span>Ends</span><input class="inp" type="time" id="es-end" value="${hhmm(e.end)}"></label></div>`}
+    </details>
+    <button class="btn" data-act="es-save" data-id="${esc(e.id)}">Save changes</button>
+    ${e.link ? `<a class="btn ghost" href="${esc(e.link)}" target="_blank" rel="noopener" style="text-decoration:none">Open in Google Calendar</a>` : ''}
+    <button class="btn danger" data-act="es-delete" data-id="${esc(e.id)}">${e.recurring ? 'Delete this one' : 'Delete event'}</button>`);
+}
+async function saveEventSheet(id, btn) {
+  const e = S.events.get(id);
+  if (!e) return;
+  const meta = { priority: Number(segVal('es-pri')) || 2, prep_min: num('es-prep'), travel_min: num('es-travel'), prep_note: val('es-note') };
+  const m0 = e.meta || {};
+  const metaChanged = !e.meta || meta.priority !== m0.priority || meta.prep_min !== (m0.prep_min || 0) || meta.travel_min !== (m0.travel_min || 0) || meta.prep_note !== (m0.prep_note || '');
+  const patch = {};
+  const title = val('es-title');
+  if (title && title !== e.title) patch.title = title;
+  if (!e.allDay && $('#es-date')) {
+    const s = atTime(val('es-date'), val('es-start'));
+    let en = atTime(val('es-date'), val('es-end'));
+    if (en <= s) en = addDays(en, 1);
+    if (+s !== +e.start || +en !== +e.end) { patch.start = localIso(s); patch.end = localIso(en); }
+  }
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    if (metaChanged) {
+      const j = await api('/api/calendar', { method: 'POST', body: { action: 'meta', key: e.metaKey, meta } });
+      for (const x of S.events.values()) if (x.metaKey === e.metaKey) x.meta = j.meta;
+    }
+    if (Object.keys(patch).length) {
+      const j = await api('/api/calendar', { method: 'POST', body: { action: 'update', id, patch } });
+      S.events.set(id, normEv(j.event));
+    }
+    closeSheet(); render(); toast('Saved');
+  } catch (err) { btn.disabled = false; btn.textContent = 'Save changes'; toast(err.message, true); }
+}
+async function deleteEvent(id, btn) {
+  const e = S.events.get(id);
+  if (!e || !confirm(`Delete "${e.title}" from your calendar?`)) return;
+  btn.disabled = true;
+  try {
+    await api('/api/calendar', { method: 'POST', body: { action: 'delete', id } });
+    S.events.delete(id); closeSheet(); render(); toast('Deleted');
+  } catch (err) { btn.disabled = false; toast(err.message, true); }
+}
+
+// Reminder form
+function openRemForm(id) {
+  const r = id ? S.data.reminders.find((x) => x.id === id) : null;
+  openSheet(`<h2>${r ? 'Reminder' : 'New reminder'}</h2><p class="lede"></p>
+    <label class="field"><span>What</span><input class="inp" id="rf-title" value="${esc(r?.title || '')}" placeholder="Reminder"></label>
+    <div class="two"><label class="field"><span>Date</span><input class="inp" type="date" id="rf-date" value="${r?.due_date || ''}"></label><label class="field"><span>Time</span><input class="inp" type="time" id="rf-time" value="${r?.due_time || ''}"></label></div>
+    <div class="field"><span>Priority</span>${segHTML('rf-pri', [[2, 'Normal'], [3, 'High']], r?.priority || 2)}</div>
+    <label class="field"><span>Notes</span><textarea class="inp" id="rf-notes" rows="3" placeholder="Optional">${esc(r?.notes || '')}</textarea></label>
+    <button class="btn" data-act="rf-save" data-id="${r?.id || ''}">${r ? 'Save changes' : 'Add reminder'}</button>
+    ${r ? `<button class="btn ghost" data-act="rf-done" data-id="${r.id}">${r.done ? 'Mark not done' : 'Mark done'}</button><button class="btn danger" data-act="rf-delete" data-id="${r.id}">Delete reminder</button>` : ''}`);
+}
+async function saveRemForm(id, btn) {
+  const title = val('rf-title');
+  if (!title) return toast('Write the reminder first.', true);
+  const old = id ? S.data.reminders.find((x) => x.id === id) : null;
+  const row = { ...(old || { id: uid(), done: false, done_at: null }), title, due_date: val('rf-date') || null, due_time: val('rf-date') ? (val('rf-time') || null) : null, priority: Number(segVal('rf-pri')) || 2, notes: val('rf-notes') };
+  btn.disabled = true;
+  try { const saved = await saveRow('reminders', row); upsertLocal('reminders', saved); closeSheet(); render(); toast(old ? 'Saved' : 'Reminder added'); }
+  catch (err) { btn.disabled = false; toast(err.message, true); }
+}
+async function quickAddRem() {
+  const input = $('#qa');
+  const title = input?.value.trim();
+  if (!title) return;
+  const due = S.qaWhen === 'today' ? todayKey() : S.qaWhen === 'tomorrow' ? dayKey(addDays(new Date(), 1)) : null;
+  const row = { id: uid(), title, due_date: due, due_time: null, priority: 2, notes: '', done: false, done_at: null };
+  upsertLocal('reminders', row);
+  input.value = '';
+  render(); $('#qa')?.focus();
+  try { await saveRow('reminders', row); } catch (err) { removeLocal('reminders', row.id); render(); toast(err.message, true); }
+}
+
+// Goals
+function openGoalSheet(id) {
+  const g = goalById(id);
+  if (!g) return;
+  const s = goalStatus(g), c = goalCat(g).c;
+  let body = '';
+  if (g.type === 'number') {
+    const logs = logsOf(g.id).slice(-6).reverse();
+    body = `<div class="gnum"><span class="big">${esc(fmtNum(g.current, g.unit === '$' ? '$' : ''))}</span><span class="of">of ${esc(fmtNum(g.target, g.unit))}</span></div><div class="bar" style="--c:${c}"><i style="width:${(s.pct * 100).toFixed(1)}%"></i></div>
+      <div class="two" style="margin-top:18px"><label class="field"><span>Add amount</span><input class="inp" type="number" inputmode="decimal" id="gs-add" placeholder="${esc(String(g.step || 1))}"></label><label class="field"><span>&nbsp;</span><button class="btn" data-act="gs-add" data-id="${g.id}">Add</button></label></div>
+      <p class="muted">Use a negative number to subtract.</p>
+      ${logs.length ? `<div class="logs">${logs.map((l) => `<div><span>${esc(relDay(l.day))}</span><span>${l.value > 0 ? '+' : ''}${esc(fmtNum(l.value, g.unit))}</span></div>`).join('')}</div>` : ''}`;
+  } else if (g.type === 'streak') {
+    body = `<p class="lede">${esc(s.text)}${g.frequency === 'weekly' ? '' : ' streak'}. Tap a day to mark it.</p><div style="--c:${c}">${streakDots(g, true, 14)}</div>`;
+  } else {
+    body = `<div style="--c:${c}">${msOf(g.id).map((m) => `<div class="ms"><button class="check${m.done ? ' on' : ''}" data-act="ms-toggle" data-id="${m.id}">${m.done ? ICON.tick : ''}</button><span>${esc(m.title)}</span><button class="x" data-act="ms-del" data-id="${m.id}" aria-label="Remove step">×</button></div>`).join('')}</div>
+      <div class="qadd glass" style="margin-top:14px"><input id="ms-new" placeholder="Add a step" autocomplete="off"><button class="qa-go" data-act="ms-add" data-id="${g.id}">Add</button></div>`;
+  }
+  openSheet(`<div class="sheet-h"><span style="width:12px;height:12px;border-radius:50%;background:${c};flex:none"></span><h2>${esc(g.title)}</h2></div>
+    <p class="muted" style="margin:-8px 0 16px">${esc(s.pace || '')}${g.deadline ? `${s.pace ? ', ' : ''}due ${fmtDay(parseDay(g.deadline))}` : ''}</p>
+    ${body}
+    <div style="margin-top:22px"><button class="btn ghost" data-act="goal-edit" data-id="${g.id}">Edit goal</button><button class="btn danger" data-act="goal-archive" data-id="${g.id}">Archive goal</button></div>`);
+}
+function openGoalForm(id) {
+  const g = id ? goalById(id) : null;
+  const type = g?.type || 'number';
+  draft = { goalType: type };
+  openSheet(`<div class="sheet-h">${g ? `<button class="icon-btn" data-act="goal-open" data-id="${g.id}" aria-label="Back">${ICON.back}</button>` : ''}<h2>${g ? 'Edit goal' : 'New goal'}</h2></div>
+    <label class="field"><span>Goal</span><input class="inp" id="gf-title" value="${esc(g?.title || '')}" placeholder="e.g. Emergency fund"></label>
+    <div class="field"><span>Area</span>${swHTML('gf-cat', g?.category || 'other', Object.keys(GOALCATS), GOALCATS)}</div>
+    <div class="field"><span>Track it as</span>${segHTML('gf-type', [['number', 'A number'], ['streak', 'A streak'], ['milestone', 'A checklist']], type)}</div>
+    <div id="gf-number" ${type === 'number' ? '' : 'hidden'}>
+      <div class="three"><label class="field"><span>Unit</span><input class="inp" id="gf-unit" value="${esc(g?.unit || '')}" placeholder="$, hrs, ch."></label><label class="field"><span>Now at</span><input class="inp" type="number" inputmode="decimal" id="gf-current" value="${g?.current ?? 0}"></label><label class="field"><span>Target</span><input class="inp" type="number" inputmode="decimal" id="gf-target" value="${g?.target ?? ''}"></label></div>
+      <label class="field"><span>Each linked event adds</span><input class="inp" type="number" inputmode="decimal" id="gf-step" value="${g?.step ?? 1}"></label>
+    </div>
+    <div id="gf-streak" ${type === 'streak' ? '' : 'hidden'}>
+      <div class="field"><span>How often</span>${segHTML('gf-freq', [['daily', 'Every day'], ['weekly', 'Times per week']], g?.frequency || 'daily')}</div>
+      <label class="field"><span>Times per week (if weekly)</span><input class="inp" type="number" inputmode="numeric" id="gf-perweek" value="${g?.per_week ?? 3}"></label>
+    </div>
+    <label class="field" id="gf-deadline-f" ${type === 'streak' ? 'hidden' : ''}><span>Deadline (optional)</span><input class="inp" type="date" id="gf-deadline" value="${g?.deadline || ''}"></label>
+    <button class="btn" data-act="gf-save" data-id="${g?.id || ''}">${g ? 'Save goal' : 'Add goal'}</button>`);
+}
+async function saveGoalForm(id, btn) {
+  const title = val('gf-title');
+  if (!title) return toast('Name the goal first.', true);
+  const type = segVal('gf-type') || 'number';
+  const old = id ? goalById(id) : null;
+  const current = num('gf-current', 0);
+  const row = {
+    ...(old || { id: uid(), archived: false, sort: (S.data.goals.length || 0) + 1, start_value: current }),
+    title, category: segVal('gf-cat') || 'other', type,
+    unit: val('gf-unit'), current, target: val('gf-target') === '' ? null : num('gf-target'), step: num('gf-step', 1),
+    frequency: segVal('gf-freq') || 'daily', per_week: Math.max(1, num('gf-perweek', 3)),
+    deadline: type === 'streak' ? null : (val('gf-deadline') || null),
+  };
+  if (type === 'number' && row.target == null) return toast('Set a target number.', true);
+  btn.disabled = true;
+  try {
+    const saved = await saveRow('goals', row);
+    upsertLocal('goals', saved);
+    render();
+    openGoalSheet(saved.id);
+    toast(old ? 'Goal saved' : 'Goal added');
+  } catch (err) { btn.disabled = false; toast(err.message, true); }
+}
+
+// Settings + templates
+const profileText = () => (S.data?.settings || []).find((s) => s.id === 'profile')?.value?.text || '';
+function openSettings() {
+  const tpls = S.data?.templates || [];
+  openSheet(`<h2>Settings</h2>
+    <section class="set"><h3>Google Calendar</h3><p class="muted">${S.google ? 'Connected. Launch reads and adds events on your main calendar.' : 'Not connected yet.'}</p><button class="btn ${S.google ? 'ghost' : ''}" data-act="connect">${S.google ? 'Reconnect Google Calendar' : 'Connect Google Calendar'}</button></section>
+    <section class="set"><div class="sec-h"><h3>Event templates</h3><button class="link-btn" data-act="tpl-edit" data-id="">New template</button></div>
+      ${tpls.map((t) => `<button class="set-row" data-act="tpl-edit" data-id="${t.id}"><i style="--c:${catOf(t.color_id).c}"></i><span>${esc(t.name)}</span><small>${fmtDur(t.duration_min)}</small></button>`).join('') || '<p class="muted">No templates yet.</p>'}
+    </section>
+    <section class="set"><h3>About you</h3><p class="muted">The AI reads this when it plans your day and guesses priority.</p><label class="field"><textarea class="inp" id="st-profile" rows="6">${esc(profileText())}</textarea></label><button class="btn ghost" data-act="profile-save">Save</button></section>
+    <button class="btn danger" data-act="signout" style="margin-top:12px">Sign out on this device</button>`);
+}
+function openTplForm(id) {
+  const t = id ? S.data.templates.find((x) => x.id === id) : null;
+  openSheet(`<div class="sheet-h"><button class="icon-btn" data-act="settings" aria-label="Back">${ICON.back}</button><h2>${t ? 'Edit template' : 'New template'}</h2></div>
+    <label class="field"><span>Name (becomes the event title)</span><input class="inp" id="tf-name" value="${esc(t?.name || '')}" placeholder="e.g. Home Depot shift"></label>
+    <div class="field"><span>Category</span>${swHTML('tf-color', t?.color_id || '7')}</div>
+    <div class="two"><label class="field"><span>Usual start</span><input class="inp" type="time" id="tf-start" value="${t?.default_start || ''}"></label><label class="field"><span>Length (min)</span><input class="inp" type="number" inputmode="numeric" id="tf-dur" value="${t?.duration_min || 60}"></label></div>
+    <div class="field"><span>Priority</span>${segHTML('tf-pri', [[1, 'Low'], [2, 'Normal'], [3, 'High']], t?.priority || 2)}</div>
+    <div class="two"><label class="field"><span>Get ready (min)</span><input class="inp" type="number" inputmode="numeric" id="tf-prep" value="${t?.prep_min || ''}" placeholder="0"></label><label class="field"><span>Drive (min)</span><input class="inp" type="number" inputmode="numeric" id="tf-travel" value="${t?.travel_min || ''}" placeholder="0"></label></div>
+    <label class="field"><span>Prep note</span><input class="inp" id="tf-note" value="${esc(t?.prep_note || '')}" placeholder="What to bring"></label>
+    <label class="switch">Block drive time on calendar<input type="checkbox" id="tf-block" ${t?.add_travel ? 'checked' : ''}></label>
+    <label class="field"><span>Counts toward goal</span><select class="inp" id="tf-goal">${goalOptions(t?.goal_id || '')}</select></label>
+    <button class="btn" data-act="tf-save" data-id="${t?.id || ''}">${t ? 'Save template' : 'Add template'}</button>
+    ${t ? `<button class="btn danger" data-act="tf-delete" data-id="${t.id}">Delete template</button>` : ''}`);
+}
+async function saveTplForm(id, btn) {
+  const name = val('tf-name');
+  if (!name) return toast('Name the template first.', true);
+  const old = id ? S.data.templates.find((x) => x.id === id) : null;
+  const row = { ...(old || { id: uid(), sort: (S.data.templates.length || 0) + 1 }), name, color_id: segVal('tf-color') || '7', default_start: val('tf-start') || null, duration_min: Math.max(5, num('tf-dur', 60)), priority: Number(segVal('tf-pri')) || 2, prep_min: num('tf-prep'), travel_min: num('tf-travel'), prep_note: val('tf-note'), add_travel: !!$('#tf-block')?.checked, goal_id: val('tf-goal') || null };
+  btn.disabled = true;
+  try { const saved = await saveRow('templates', row); upsertLocal('templates', saved); openSettings(); toast('Template saved'); }
+  catch (err) { btn.disabled = false; toast(err.message, true); }
+}
+
+// ---------- actions ----------
+const A = {
+  close: closeSheet,
+  retry: refreshAll,
+  tab: (el) => {
+    closeSheet();
+    S.view = el.dataset.v;
+    window.scrollTo(0, 0);
+    if (S.view === 'schedule') ensureWeek(S.weekStart);
+    render();
+  },
+  add: openAdd,
+  settings: openSettings,
+  async login(el) {
+    const pass = $('#pass').value;
+    if (!pass) return;
+    el.disabled = true; el.textContent = 'Checking…';
+    try {
+      const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passcode: pass }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'Could not sign in.');
+      S.token = j.token; localStorage.setItem('launch.token', j.token);
+      render(); refreshAll();
+    } catch (err) { el.disabled = false; el.textContent = 'Unlock'; $('#login-err').textContent = err.message; }
+  },
+  signout: () => { closeSheet(); signOut(); },
+  async connect(el) {
+    el.disabled = true;
+    try { const j = await api('/api/google-start', { method: 'POST' }); location.href = j.url; }
+    catch (err) { el.disabled = false; toast(err.message, true); }
+  },
+  'brief-refresh': () => ensureBriefing(true),
+  ev: (el) => openEventSheet(el.dataset.id),
+  'log-ev': (el) => { const e = S.events.get(el.dataset.id); if (e) { closeSheet(); logFromEvent(e); } },
+  'day-sel': (el) => { S.selDay = el.dataset.k; render(); },
+  'week-prev': () => { S.weekStart = addDays(S.weekStart, -7); S.selDay = dayKey(S.weekStart); ensureWeek(S.weekStart); render(); },
+  'week-next': () => { S.weekStart = addDays(S.weekStart, 7); S.selDay = dayKey(S.weekStart); ensureWeek(S.weekStart); render(); },
+  'week-now': () => { S.weekStart = sow(new Date()); S.selDay = todayKey(); ensureWeek(S.weekStart); render(); },
+  seg: (el) => {
+    el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el));
+    if (el.parentElement.id === 'gf-type') {
+      const t = el.dataset.v;
+      $('#gf-number').hidden = t !== 'number';
+      $('#gf-streak').hidden = t !== 'streak';
+      $('#gf-deadline-f').hidden = t === 'streak';
+    }
+  },
+  'tpl-use': (el) => openEventForm(S.data.templates.find((t) => t.id === el.dataset.id)),
+  'ev-custom': () => openEventForm(null),
+  'ef-allday': (el) => { $('#ef-times').hidden = el.checked; },
+  'ef-save': (el) => saveEventForm(el),
+  'es-save': (el) => saveEventSheet(el.dataset.id, el),
+  'es-delete': (el) => deleteEvent(el.dataset.id, el),
+  'rem-check': (el) => toggleRem(el.dataset.id),
+  'rem-open': (el) => openRemForm(el.dataset.id),
+  'rem-new': () => openRemForm(null),
+  'rf-save': (el) => saveRemForm(el.dataset.id, el),
+  'rf-done': (el) => { toggleRem(el.dataset.id); closeSheet(); },
+  async 'rf-delete'(el) {
+    const id = el.dataset.id;
+    const r = S.data.reminders.find((x) => x.id === id);
+    removeLocal('reminders', id); closeSheet(); render();
+    try { await delRow('reminders', id); toast('Deleted'); } catch (err) { upsertLocal('reminders', r); render(); toast(err.message, true); }
+  },
+  'qa-when': (el) => { S.qaWhen = el.dataset.v; const v = $('#qa')?.value; render(); if (v) $('#qa').value = v; },
+  'qa-add': quickAddRem,
+  'goal-new': () => openGoalForm(null),
+  'goal-open': (el) => openGoalSheet(el.dataset.id),
+  'goal-edit': (el) => openGoalForm(el.dataset.id),
+  'gf-save': (el) => saveGoalForm(el.dataset.id, el),
+  'goal-check': (el) => { const g = goalById(el.dataset.id); if (g) toggleCheckin(g, todayKey()); },
+  'goal-day': async (el) => { const g = goalById(el.dataset.id); if (g) { await toggleCheckin(g, el.dataset.k); openGoalSheet(g.id); } },
+  async 'goal-archive'(el) {
+    const g = goalById(el.dataset.id);
+    if (!g || !confirm(`Archive "${g.title}"? It disappears from your goals.`)) return;
+    g.archived = true; closeSheet(); render();
+    try { await saveRow('goals', g); toast('Goal archived'); } catch (err) { g.archived = false; render(); toast(err.message, true); }
+  },
+  'gs-add': (el) => {
+    const g = goalById(el.dataset.id);
+    const raw = val('gs-add');
+    const delta = raw === '' ? (+g.step || 1) : Number(raw);
+    if (!g || !Number.isFinite(delta) || delta === 0) return;
+    addToNumber(g, delta).then(() => openGoalSheet(g.id));
+  },
+  async 'ms-add'(el) {
+    const title = val('ms-new');
+    if (!title) return;
+    const row = { id: uid(), goal_id: el.dataset.id, title, done: false, sort: msOf(el.dataset.id).length + 1 };
+    upsertLocal('milestones', row); openGoalSheet(el.dataset.id); render();
+    setTimeout(() => $('#ms-new')?.focus(), 50);
+    try { await saveRow('milestones', row); } catch (err) { removeLocal('milestones', row.id); openGoalSheet(el.dataset.id); render(); toast(err.message, true); }
+  },
+  async 'ms-toggle'(el) {
+    const m = S.data.milestones.find((x) => x.id === el.dataset.id);
+    if (!m) return;
+    m.done = !m.done; openGoalSheet(m.goal_id); render();
+    try { await saveRow('milestones', m); } catch (err) { m.done = !m.done; openGoalSheet(m.goal_id); render(); toast(err.message, true); }
+  },
+  async 'ms-del'(el) {
+    const m = S.data.milestones.find((x) => x.id === el.dataset.id);
+    if (!m) return;
+    removeLocal('milestones', m.id); openGoalSheet(m.goal_id); render();
+    try { await delRow('milestones', m.id); } catch (err) { upsertLocal('milestones', m); openGoalSheet(m.goal_id); render(); toast(err.message, true); }
+  },
+  'tpl-edit': (el) => openTplForm(el.dataset.id || null),
+  'tf-save': (el) => saveTplForm(el.dataset.id, el),
+  async 'tf-delete'(el) {
+    const t = S.data.templates.find((x) => x.id === el.dataset.id);
+    if (!t || !confirm(`Delete the "${t.name}" template?`)) return;
+    try { await delRow('templates', t.id); removeLocal('templates', t.id); openSettings(); toast('Template deleted'); } catch (err) { toast(err.message, true); }
+  },
+  async 'profile-save'(el) {
+    const text = $('#st-profile').value.trim();
+    el.disabled = true;
+    try { const saved = await saveRow('settings', { id: 'profile', value: { text } }); upsertLocal('settings', saved); toast('Saved'); } catch (err) { toast(err.message, true); }
+    el.disabled = false;
+  },
+};
+
+function signOut() {
+  localStorage.removeItem('launch.token');
+  S.token = ''; S.data = null; S.events.clear(); S.briefing = null; S.eventsReady = false; S.triaged.clear();
+  render();
+}
+
+document.addEventListener('click', (ev) => {
+  const el = ev.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  if (el.tagName === 'INPUT' && el.type === 'checkbox') { A[el.dataset.act]?.(el, ev); return; }
+  ev.preventDefault();
+  A[el.dataset.act]?.(el, ev);
+});
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') return closeSheet();
+  if (ev.key !== 'Enter') return;
+  if (ev.target.id === 'qa') { ev.preventDefault(); return quickAddRem(); }
+  if (ev.target.id === 'pass') { ev.preventDefault(); return A.login($('[data-act="login"]')); }
+  if (ev.target.id === 'ms-new') { ev.preventDefault(); return A['ms-add']($('[data-act="ms-add"]')); }
+  if (ev.target.getAttribute('role') === 'button') { ev.preventDefault(); ev.target.click(); }
+});
+document.addEventListener('change', (ev) => {
+  if (ev.target.id === 'ef-start' && draft) { // keep the length when the start moves
+    const len = draft.tpl?.duration_min || 60;
+    const s = atTime(val('ef-date') || todayKey(), ev.target.value || '00:00');
+    $('#ef-end').value = hhmm(new Date(s.getTime() + len * 6e4));
+  }
+});
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && S.token) { setSky(); if (Date.now() - S.lastLoad > 5 * 60e3) refreshAll(); else render(); }
+});
+setInterval(() => { if (S.token && !document.hidden && !$('#sheet').classList.contains('show') && S.view !== 'reminders') render(); }, 60e3);
+
+function handleQuery() {
+  const p = new URLSearchParams(location.search);
+  if (p.get('google') === 'connected') setTimeout(() => toast('Google Calendar connected'), 300);
+  if (p.get('google') === 'error') setTimeout(() => toast(p.get('msg') || 'Google sign-in failed.', true), 300);
+  if (p.has('google')) history.replaceState(null, '', '/');
+}
+
+setSky();
+handleQuery();
+render();
+if (S.token) refreshAll();
+</script>
+</body>
+</html>
