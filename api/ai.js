@@ -60,6 +60,33 @@ Other rules:
 Return only JSON:
 {"headline":"max 9 words, the one thing that defines today","plan":"2-4 short sentences","focus":["up to 3 short actions, max 7 words each"]}`;
 
+const SLOT = (who) => `You find a realistic time for a task in someone's week. The person:
+${who}
+
+You get the task and a list of genuinely open windows. Pick ONE window and a start time inside it.
+Rules:
+- Only use the windows given. Never invent time.
+- Match the task to the right kind of window: phone calls and errands need business hours on a weekday, quiet work suits evenings, anything long needs a wide window.
+- Leave breathing room. Don't start a task at the very end of a window.
+- Prefer sooner, but not at the cost of a bad fit.
+- duration_min: your estimate of how long it actually takes, 15 to 180.
+- why: max 12 words, plain, why this slot works.
+If nothing fits, return {"none":true,"why":"short reason"}.
+Return only JSON: {"day":"YYYY-MM-DD","start":"HH:MM","duration_min":30,"why":"..."}`;
+
+const WEEKLY = (who) => `You write a short Sunday check-in inside Launch, reviewing the week that just ended and setting up the next one. The person:
+${who}
+
+Voice: a sharp, practical friend. Casual, direct, specific. No fluff, no motivational filler, no emojis.
+Rules:
+- Use only the goals, progress, open time, and events given. Never invent anything.
+- Be honest about what slipped. Don't soften it, don't pile on.
+- Ignore goals that haven't started yet. Mention them only if one starts this coming week.
+- For each goal that needs attention, name a real open window from next week where the work fits.
+- Suggestions: max 3, each tied to one goal.
+Return only JSON:
+{"headline":"max 9 words on the week","review":"2-4 short sentences","suggestions":[{"goal":"goal title","text":"max 16 words, names a real day and time"}]}`;
+
 export default route(async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { error: 'Use POST.' });
   const b = body(req);
@@ -103,6 +130,42 @@ export default route(async (req, res) => {
     };
     await q(db().from('launch_briefings').upsert(row));
     return send(res, 200, { briefing: row });
+  }
+
+  if (b.action === 'slot') {
+    const task = clip(b.task, 200);
+    if (!task) return send(res, 400, { error: 'task is required.' });
+    const windows = (b.windows || []).slice(0, 40).map((x) => clip(x, 60));
+    if (!windows.length) return send(res, 200, { none: true, why: 'No open time in the next week.' });
+    const out = await geminiJSON(SLOT(await profile()), JSON.stringify({ task, note: clip(b.note, 200), today: clip(b.today, 10), open_windows: windows }));
+    if (out?.none) return send(res, 200, { none: true, why: clip(out.why, 120) });
+    const day = clip(out.day, 10), start = clip(out.start, 5);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !/^\d{2}:\d{2}$/.test(start)) {
+      return send(res, 200, { none: true, why: 'Could not find a clean slot. Pick a time yourself.' });
+    }
+    const dur = Math.min(180, Math.max(15, Math.round(Number(out.duration_min) || 30)));
+    return send(res, 200, { day, start, duration_min: dur, why: clip(out.why, 120) });
+  }
+
+  if (b.action === 'weekly') {
+    const week = clip(b.week_start, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(week)) return send(res, 400, { error: 'week_start must be YYYY-MM-DD.' });
+    if (!b.force) {
+      const cached = await q(db().from('launch_checkins').select('*').eq('week_start', week).maybeSingle());
+      if (cached) return send(res, 200, { checkin: cached });
+    }
+    const out = await geminiJSON(WEEKLY(await profile()), JSON.stringify(b.context || {}).slice(0, 12000));
+    const row = {
+      week_start: week,
+      headline: clip(out.headline, 90) || 'Week in review',
+      review: clip(out.review, 800),
+      suggestions: (Array.isArray(out.suggestions) ? out.suggestions : []).slice(0, 3)
+        .map((x) => ({ goal: clip(x.goal, 80), text: clip(x.text, 140) })).filter((x) => x.text),
+      hash: clip(b.hash, 40),
+      created_at: new Date().toISOString(),
+    };
+    await q(db().from('launch_checkins').upsert(row));
+    return send(res, 200, { checkin: row });
   }
 
   send(res, 400, { error: 'Unknown action.' });

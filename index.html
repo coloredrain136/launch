@@ -286,6 +286,16 @@ details.more[open] summary{margin-bottom:4px}
 .rt .x{color:var(--ink-3);font-size:20px;padding:6px}
 .rt .inp{min-height:42px;padding:9px 10px;font-size:15px}
 
+/* unscheduled + tips */
+.rem.uns{grid-template-columns:28px minmax(0,1fr) auto;align-items:center}
+.find{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;font-size:13px;font-weight:600;color:var(--dawn);border:1px solid color-mix(in srgb,var(--dawn) 45%,transparent);background:color-mix(in srgb,var(--dawn) 12%,transparent);white-space:nowrap;flex:none}
+.find svg{width:15px;height:15px}
+.tipc{display:grid;gap:3px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--dawn) 11%,transparent);border:1px solid color-mix(in srgb,var(--dawn) 26%,transparent);margin-top:10px}
+.tipc b{font-size:13px;color:var(--dawn);font-weight:700}
+.tipc span{font-size:15px;line-height:1.45}
+.tip{padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--dawn) 11%,transparent);border:1px solid color-mix(in srgb,var(--dawn) 26%,transparent);font-size:15px;margin:0 0 16px}
+.goal.soon{opacity:.62}
+
 /* login */
 .login{min-height:calc(100dvh - 140px);display:grid;align-content:center;gap:14px;max-width:360px;margin:0 auto}
 .login h1{font-family:var(--serif);font-weight:400;font-size:64px;line-height:.9}
@@ -358,6 +368,8 @@ const ICON = {
   prev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>',
   next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.6l2.5 5.2 5.6.8-4 4 .9 5.6-5-2.7-5 2.7.9-5.6-4-4 5.6-.8z"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
 };
 
 // Google's event colors, brightened for a dark UI. Your scheme:
@@ -433,6 +445,10 @@ const S = {
   loadedWeeks: new Set(),
   lastLoad: 0,
   qaWhen: '',
+  qaNeedsTime: false,
+  slot: null,
+  sheetIs: null,
+  checkinBusy: false,
   errors: {},
 };
 
@@ -545,55 +561,92 @@ const activeGoals = () => (S.data?.goals || []).filter((g) => !g.archived);
 const goalById = (id) => (S.data?.goals || []).find((g) => g.id === id);
 const logsOf = (id) => (S.data?.logs || []).filter((l) => l.goal_id === id);
 const msOf = (id) => (S.data?.milestones || []).filter((m) => m.goal_id === id).sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
-function paceFrac(g) {
-  if (!g.deadline) return null;
-  const c0 = new Date(g.created_at || Date.now()), dl = addDays(parseDay(g.deadline), 1);
-  return Math.max(0, Math.min(1, (Date.now() - c0) / Math.max(1, dl - c0)));
-}
+const startKey = (g) => g.start_date || (g.created_at || new Date().toISOString()).slice(0, 10);
+const notStarted = (g) => startKey(g) > todayKey();
+const weeksBetween = (a, b) => Math.max(0, (parseDay(b) - parseDay(a)) / (7 * 864e5));
+const money = (g) => g.unit === '$';
+
+// One place that answers: where should this goal be, and where is it?
 function goalStatus(g) {
-  const logs = logsOf(g.id);
-  if (g.type === 'number') {
-    const s = +g.start_value || 0, t = +g.target || 0, c = +g.current || 0;
-    const pct = t === s ? 0 : Math.max(0, Math.min(1, (c - s) / (t - s)));
-    const f = paceFrac(g);
-    const behind = pct < 1 && f != null && pct < f - 0.08;
-    const pace = pct >= 1 ? 'Done' : f == null ? '' : behind ? 'Behind pace' : 'On pace';
-    return { pct, behind, pace, text: `${fmtNum(c, g.unit)} of ${fmtNum(t, g.unit)}` };
+  const logs = logsOf(g.id), t = todayKey(), sk = startKey(g);
+  const base = { pct: 0, behind: false, pace: '', text: '', notStarted: notStarted(g), projected: null, need: '' };
+  if (base.notStarted) {
+    const d = Math.round((parseDay(sk) - sod(new Date())) / 864e5);
+    base.pace = `Starts ${relDay(sk)}${d > 1 ? `, ${d} days out` : ''}`;
   }
-  if (g.type === 'milestone') {
-    const ms = msOf(g.id), done = ms.filter((m) => m.done).length;
-    const pct = ms.length ? done / ms.length : 0;
-    const f = paceFrac(g);
-    const behind = ms.length > 0 && pct < 1 && f != null && pct < f - 0.08;
-    const next = ms.find((m) => !m.done);
-    return { pct, behind, pace: pct >= 1 && ms.length ? 'Done' : behind ? 'Behind pace' : next ? `Next: ${next.title}` : 'Add steps to track', text: `${done} of ${ms.length} done` };
+
+  if (g.type === 'number' || g.type === 'milestone') {
+    let cur, tgt, start, text;
+    if (g.type === 'number') {
+      start = +g.start_value || 0; tgt = +g.target || 0; cur = +g.current || 0;
+      text = `${fmtNum(cur, g.unit)} of ${fmtNum(tgt, g.unit)}`;
+    } else {
+      const ms = msOf(g.id);
+      start = 0; tgt = ms.length; cur = ms.filter((m) => m.done).length;
+      text = `${cur} of ${tgt} done`;
+    }
+    const pct = tgt === start ? 0 : Math.max(0, Math.min(1, (cur - start) / (tgt - start)));
+    const left = Math.max(0, tgt - cur);
+    const done = pct >= 1 && tgt > start;
+    const out = { ...base, pct, text };
+    if (done) return { ...out, pace: 'Done', pct: 1 };
+    if (base.notStarted) return out;
+
+    if (g.pace_mode === 'rate' && +g.rate > 0) {
+      const weeks = left / +g.rate;
+      const proj = addDays(new Date(), Math.ceil(weeks * 7));
+      out.projected = dayKey(proj);
+      out.need = `${fmtNum(g.rate, g.unit)} a week`;
+      out.behind = !!g.deadline && out.projected > g.deadline;
+      out.pace = g.deadline && out.behind ? `Finishing ${fmtDay(proj)}, past your deadline` : `On track to finish ${fmtDay(proj)}`;
+      return out;
+    }
+    if (g.deadline) {
+      const total = weeksBetween(sk, g.deadline), gone = weeksBetween(sk, t);
+      const expect = total <= 0 ? 1 : Math.max(0, Math.min(1, gone / total));
+      const weeksLeft = Math.max(0, weeksBetween(t, g.deadline));
+      out.behind = pct < expect - 0.08;
+      out.need = weeksLeft > 0 ? `${fmtNum(Math.ceil((left / weeksLeft) * 100) / 100, g.unit)} a week` : `${fmtNum(left, g.unit)} left`;
+      out.pace = weeksLeft <= 0 ? 'Deadline passed' : out.behind ? `Behind, needs ${out.need}` : `On pace, ${out.need}`;
+      return out;
+    }
+    out.pace = g.type === 'milestone' ? (msOf(g.id).find((m) => !m.done) ? `Next: ${msOf(g.id).find((m) => !m.done).title}` : 'Add steps to track') : 'No deadline set';
+    return out;
   }
+
   // streak
   const days = new Set(logs.map((l) => l.day));
-  const t = todayKey();
   if (g.frequency === 'weekly') {
     const ws = sow(new Date());
     let n = 0;
     for (let i = 0; i < 7; i++) if (days.has(dayKey(addDays(ws, i)))) n++;
     const need = Math.max(1, +g.per_week || 3);
-    const left = 7 - ((new Date().getDay() + 6) % 7); // days left incl. today
-    const behind = n < need && need - n >= left;
+    const leftDays = 7 - ((new Date().getDay() + 6) % 7);
     let weeks = n >= need ? 1 : 0;
     for (let w = 1; w < 60; w++) {
-      const s = addDays(ws, -7 * w);
+      const st = addDays(ws, -7 * w);
       let c = 0;
-      for (let i = 0; i < 7; i++) if (days.has(dayKey(addDays(s, i)))) c++;
+      for (let i = 0; i < 7; i++) if (days.has(dayKey(addDays(st, i)))) c++;
       if (c >= need) weeks++; else break;
     }
-    return { pct: Math.min(1, n / need), behind, n, need, weeks, pace: n >= need ? 'Week done' : behind ? `Need ${need - n} more, ${left} day${left === 1 ? '' : 's'} left` : `${need - n} to go this week`, text: `${n} of ${need} this week` };
+    const out = { ...base, pct: Math.min(1, n / need), n, need, weeks, text: `${n} of ${need} this week` };
+    if (base.notStarted) return out;
+    out.behind = n < need && need - n >= leftDays;
+    out.pace = n >= need ? 'Week done' : out.behind ? `Need ${need - n} more, ${leftDays} day${leftDays === 1 ? '' : 's'} left` : `${need - n} to go this week`;
+    return out;
   }
   let d = new Date();
   if (!days.has(dayKey(d))) d = addDays(d, -1);
   let n = 0;
   while (days.has(dayKey(d))) { n++; d = addDays(d, -1); }
   const doneToday = days.has(t);
-  return { pct: doneToday ? 1 : 0, behind: !doneToday, n, pace: doneToday ? 'Done today' : 'Not yet today', text: n === 1 ? '1 day' : `${n} days` };
+  const out = { ...base, pct: doneToday ? 1 : 0, n, text: n === 1 ? '1 day' : `${n} days` };
+  if (base.notStarted) return out;
+  out.behind = !doneToday;
+  out.pace = doneToday ? 'Done today' : 'Not yet today';
+  return out;
 }
+
 async function toggleCheckin(g, day, note = '') {
   const existing = logsOf(g.id).find((l) => l.day === day);
   if (existing) {
@@ -644,6 +697,108 @@ async function toggleRem(id) {
   r.done = !r.done; r.done_at = r.done ? new Date().toISOString() : null;
   render();
   try { await saveRow('reminders', r); } catch (e) { Object.assign(r, prev); render(); toast(e.message, true); }
+}
+
+// ---------- unscheduled: things with no home in the week ----------
+const unscheduled = () => (S.data?.reminders || []).filter((r) => !r.done && r.needs_time).sort((a, b) => b.priority - a.priority);
+// Real open windows across the next 7 days, in the AI's format.
+function openWindows(days = 7) {
+  const out = [];
+  for (let i = 0; i < days; i++) {
+    const k = dayKey(addDays(new Date(), i));
+    for (const g of freeGaps(k)) {
+      if (i === 0 && g.e < new Date()) continue;
+      const s0 = i === 0 && g.s < new Date() ? new Date(Math.ceil(Date.now() / 18e5) * 18e5) : g.s;
+      if (g.e - s0 < 30 * 6e4) continue;
+      out.push(`${k} ${WD[parseDay(k).getDay()].slice(0, 3)} ${fmtT(s0)}-${fmtT(g.e)}`);
+    }
+  }
+  return out.slice(0, 40);
+}
+async function findSlot(id) {
+  const r = S.data.reminders.find((x) => x.id === id);
+  if (!r) return;
+  if (!S.google) return toast('Connect Google Calendar first.', true);
+  S.slot = { id, busy: true, proposal: null, error: null };
+  openSlotSheet();
+  try {
+    const j = await api('/api/ai', { method: 'POST', body: { action: 'slot', task: r.title, note: r.notes || '', today: todayKey(), windows: openWindows() } });
+    S.slot = j.none ? { id, busy: false, error: j.why || 'Nothing fits this week.' } : { id, busy: false, proposal: j };
+  } catch (err) { S.slot = { id, busy: false, error: err.message }; }
+  openSlotSheet();
+}
+async function acceptSlot(btn) {
+  const { id, proposal: p } = S.slot || {};
+  const r = S.data.reminders.find((x) => x.id === id);
+  if (!r || !p) return;
+  btn.disabled = true; btn.textContent = 'Adding…';
+  const start = atTime(p.day, p.start), end = new Date(+start + p.duration_min * 6e4);
+  try {
+    const j = await api('/api/calendar', { method: 'POST', body: {
+      action: 'create',
+      event: { title: r.title, start: localIso(start), end: localIso(end), allDay: false, colorId: '7', notes: r.notes || '' },
+      meta: { priority: r.priority >= 3 ? 3 : 2, prep_min: 0, travel_min: 0, prep_note: '', checklist: [], source: 'manual' },
+    } });
+    S.events.set(j.event.id, normEv(j.event));
+    const row = { ...r, needs_time: false, due_date: p.day, due_time: p.start };
+    upsertLocal('reminders', row);
+    closeSheet(); S.slot = null; render();
+    await saveRow('reminders', row);
+    toast(`Scheduled ${relDay(p.day)} at ${fmtT(start)}`);
+  } catch (err) { btn.disabled = false; btn.textContent = 'Add it'; toast(err.message, true); }
+}
+
+// ---------- weekly check-in ----------
+// The week you're planning: on Sunday that's tomorrow's Monday, otherwise this Monday.
+const planWeek = () => dayKey(new Date().getDay() === 0 ? sow(addDays(new Date(), 1)) : sow(new Date()));
+function checkinDue() {
+  const d = new Date(), day = d.getDay();
+  if (localStorage.getItem('launch.checkin.hid') === planWeek()) return false;
+  return (day === 0 && d.getHours() >= 16) || day === 1;
+}
+function weeklyContext() {
+  const ws = planWeek(), prev = dayKey(addDays(parseDay(ws), -7));
+  const goals = activeGoals().map((g) => {
+    const st = goalStatus(g);
+    const lastWeek = logsOf(g.id).filter((l) => l.day >= prev && l.day < ws).length;
+    return { title: g.title, area: goalCat(g).name, progress: st.text, status: st.pace, behind: st.behind,
+      not_started_yet: st.notStarted, starts: st.notStarted ? startKey(g) : undefined,
+      deadline: g.deadline || undefined, projected_finish: st.projected || undefined,
+      needed_pace: st.need || undefined, sessions_logged_last_week: lastWeek };
+  });
+  const week = [];
+  for (let i = 0; i < 7; i++) {
+    const k = dayKey(addDays(parseDay(ws), i));
+    const evs = eventsOn(k).filter((e) => !e.allDay);
+    week.push({ day: `${WD[parseDay(k).getDay()]} ${k}`, events: evs.map((e) => `${e.title} ${fmtT(e.start)}-${fmtT(e.end)}`) });
+  }
+  return { week_starting: ws, goals, next_week: week, open_windows: openWindows(8) };
+}
+async function ensureCheckin(force = false) {
+  if (S.checkinBusy) return;
+  const ws = planWeek();
+  if (!force && S.data?.checkin?.week_start === ws) return;
+  S.checkinBusy = true; S.errors.checkin = null; render();
+  try {
+    const ctx = weeklyContext();
+    const j = await api('/api/ai', { method: 'POST', body: { action: 'weekly', week_start: ws, force, hash: hashOf({ events: ctx.goals, coming_up: ctx.next_week, routine: 0 }), context: ctx } });
+    S.data.checkin = j.checkin;
+  } catch (err) { S.errors.checkin = err.message; }
+  S.checkinBusy = false;
+  render();
+  if (S.sheetIs === 'weekly') openWeeklySheet();
+}
+function openWeeklySheet() {
+  S.sheetIs = 'weekly';
+  const c = S.data?.checkin, ws = planWeek(), fresh = c?.week_start === ws;
+  const body = S.checkinBusy
+    ? '<p class="loading">Looking at your week…</p>'
+    : !fresh
+      ? `<p class="lede">${esc(S.errors.checkin || 'No check-in for this week yet.')}</p><button class="btn" data-act="weekly-run">Run the check-in</button>`
+      : `<h2 style="margin-bottom:10px">${esc(c.headline)}</h2><p class="lede">${esc(c.review)}</p>
+         ${(c.suggestions || []).map((x) => `<div class="tipc"><b>${esc(x.goal)}</b><span>${esc(x.text)}</span></div>`).join('')}
+         <div class="brief-foot"><span>Week of ${esc(fmtDay(parseDay(c.week_start)))}</span><button class="link-btn" data-act="weekly-run">Run it again</button></div>`;
+  openSheet(`<div class="sheet-h"><h2>Weekly check-in</h2></div>${body}`);
 }
 
 // ---------- AI: triage + morning plan ----------
@@ -810,6 +965,7 @@ function viewToday() {
     if (!S.eventsReady) main += `<p class="loading">Loading your calendar…</p>`;
     else {
       if (S.errors.events) main += `<p class="note-err">${esc(S.errors.events)}</p>`;
+      if (checkinDue()) main += checkinCard();
       const n = nextUp();
       if (n) main += nextHTML(n);
       main += `<section class="sec"><h3>Today</h3>${lineupHTML(k)}</section>`;
@@ -841,6 +997,15 @@ function briefingHTML() {
     ${S.errors.brief ? `<p class="note-err">${esc(S.errors.brief)}</p>` : ''}
   </section>`;
 }
+function checkinCard() {
+  const c = S.data?.checkin, fresh = c?.week_start === planWeek();
+  if (S.checkinBusy) return `<section class="brief glass thinking" style="margin-top:14px"><h2>Reviewing your week…</h2></section>`;
+  if (!fresh) return `<div class="next glass" style="--c:var(--dawn);margin-top:14px" role="button" tabindex="0" data-act="weekly-run"><span class="rail"></span><div><div class="when">Sunday check-in</div><div class="ttl">Look at the week ahead</div></div><div class="count" style="font-size:15px">Run</div></div>`;
+  return `<section class="brief glass" style="margin-top:14px"><h2 style="font-size:24px">${esc(c.headline)}</h2><p>${esc(c.review)}</p>
+    ${(c.suggestions || []).map((x) => `<div class="tipc"><b>${esc(x.goal)}</b><span>${esc(x.text)}</span></div>`).join('')}
+    <div class="brief-foot"><span>Week of ${esc(fmtDay(parseDay(c.week_start)))}</span><button class="link-btn" data-act="weekly-hide">Dismiss</button></div></section>`;
+}
+
 function nextUp() {
   const now = new Date();
   return eventsOn(todayKey()).filter((e) => !e.allDay && e.end > now)[0];
@@ -904,15 +1069,23 @@ function sideHTML() {
   }
   const due = remindersDue();
   h += `<section class="sec"><div class="sec-h"><h3>Reminders</h3><button class="link-btn" data-act="tab" data-v="reminders">See all</button></div>${due.length ? due.map(remRow).join('') : '<p class="muted">Nothing due today.</p>'}</section>`;
-  const risk = activeGoals().filter((g) => goalStatus(g).behind).slice(0, 3);
+  const risk = activeGoals().filter((g) => { const st = goalStatus(g); return st.behind && !st.notStarted; }).slice(0, 3);
   if (risk.length) {
     h += `<section class="sec"><h3>Goals that need you</h3>${risk.map((g) => {
       const s = goalStatus(g), c = goalCat(g).c;
       const quick = g.type === 'streak' ? `<button class="chk-btn" style="--c:${c}" data-act="goal-check" data-id="${g.id}">Check in</button>` : '';
-      return `<div class="mini" style="--c:${c}"><div role="button" tabindex="0" data-act="goal-open" data-id="${g.id}"><b>${esc(g.title)}</b><small>${esc(s.pace || s.text)}</small></div>${quick}</div>`;
+      const tip = (S.data?.checkin?.suggestions || []).find((x) => x.goal && g.title.toLowerCase().includes(x.goal.toLowerCase().slice(0, 12)));
+      return `<div class="mini" style="--c:${c}"><div role="button" tabindex="0" data-act="goal-open" data-id="${g.id}"><b>${esc(g.title)}</b><small>${esc(tip ? tip.text : (s.pace || s.text))}</small></div>${quick}</div>`;
     }).join('')}</section>`;
   }
   return h;
+}
+function unsRow(r) {
+  return `<div class="rem uns">
+    <button class="check" data-act="rem-check" data-id="${r.id}" aria-label="Mark done"></button>
+    <div class="rem-b" role="button" tabindex="0" data-act="rem-open" data-id="${r.id}"><div class="rem-t">${r.priority >= 3 ? '<span class="flag">!</span> ' : ''}${esc(r.title)}</div></div>
+    <button class="find" data-act="slot-find" data-id="${r.id}">${ICON.clock} Find a time</button>
+  </div>`;
 }
 function remRow(r) {
   const late = isLate(r), d = dueText(r);
@@ -946,7 +1119,7 @@ function viewSchedule() {
 // Goals
 function viewGoals() {
   const goals = activeGoals();
-  const add = `<button class="icon-btn glass" data-act="goal-new" aria-label="New goal">${ICON.plus}</button>`;
+  const add = `<button class="icon-btn glass" data-act="weekly-open" aria-label="Weekly check-in">${ICON.star}</button><button class="icon-btn glass" data-act="goal-new" aria-label="New goal">${ICON.plus}</button>`;
   const sub = goals.length ? `${goals.length} active` : 'Track anything you’re working toward';
   if (!goals.length) return headerHTML('Goals', sub, add) + `<div class="empty-card glass"><p>Add a goal to start tracking progress: savings, study streaks, a checklist, anything.</p><button class="btn" data-act="goal-new">New goal</button></div>`;
   return headerHTML('Goals', sub, add) + goals.map(goalCard).join('');
@@ -961,9 +1134,9 @@ function goalCard(g) {
   } else {
     mid = `<div class="gnum"><span class="big">${g.frequency === 'weekly' ? `${s.n}/${s.need}` : s.n}</span><span class="of">${g.frequency === 'weekly' ? `this week${s.weeks > 1 ? `, ${s.weeks} weeks in a row` : ''}` : 'day streak'}</span></div>${streakDots(g, false)}`;
   }
-  const quick = g.type === 'streak' ? `<button class="chk-btn${logsOf(g.id).some((l) => l.day === todayKey()) ? ' on' : ''}" data-act="goal-check" data-id="${g.id}">${logsOf(g.id).some((l) => l.day === todayKey()) ? 'Done today' : 'Check in'}</button>` : '';
-  const due = g.deadline ? `Due ${fmtDay(parseDay(g.deadline))}` : '';
-  return `<div class="goal glass" style="--c:${c}" role="button" tabindex="0" data-act="goal-open" data-id="${g.id}">
+  const quick = g.type === 'streak' && !s.notStarted ? `<button class="chk-btn${logsOf(g.id).some((l) => l.day === todayKey()) ? ' on' : ''}" data-act="goal-check" data-id="${g.id}">${logsOf(g.id).some((l) => l.day === todayKey()) ? 'Done today' : 'Check in'}</button>` : '';
+  const due = s.projected ? `Finish ${fmtDay(parseDay(s.projected))}` : g.deadline ? `Due ${fmtDay(parseDay(g.deadline))}` : '';
+  return `<div class="goal glass${s.notStarted ? ' soon' : ''}" style="--c:${c}" role="button" tabindex="0" data-act="goal-open" data-id="${g.id}">
     <div class="gt"><i></i><h4>${esc(g.title)}</h4>${quick}</div>
     ${mid}
     <div class="gfoot"><span class="pace${s.behind ? ' behind' : ''}${/done/i.test(s.pace) ? ' done' : ''}">${esc(s.pace)}</span><span>${esc(due)}</span></div>
@@ -985,19 +1158,22 @@ function streakDots(g, tappable, span = 7) {
 
 // Reminders
 function viewReminders() {
-  const open = openRems(), t = todayKey();
+  const all = openRems(), t = todayKey();
+  const waiting = unscheduled();
+  const open = all.filter((r) => !r.needs_time);
   const late = open.filter(isLate).sort(remSort);
   const today = open.filter((r) => r.due_date === t && !isLate(r)).sort(remSort);
   const later = open.filter((r) => r.due_date && r.due_date > t).sort(remSort);
   const anytime = open.filter((r) => !r.due_date).sort((a, b) => b.priority - a.priority);
   const done = (S.data.reminders || []).filter((r) => r.done).sort((a, b) => (b.done_at || '').localeCompare(a.done_at || '')).slice(0, 10);
   const grp = (title, list) => (list.length ? `<div class="grp"><h3>${title}</h3>${list.map(remRow).join('')}</div>` : '');
-  const when = [['', 'No date'], ['today', 'Today'], ['tomorrow', 'Tomorrow']].map(([v, l]) => `<button class="pill${S.qaWhen === v ? ' on' : ''}" data-act="qa-when" data-v="${v}">${l}</button>`).join('')
+  const when = [['', 'No date'], ['today', 'Today'], ['tomorrow', 'Tomorrow'], ['needs', 'Needs a time']].map(([v, l]) => `<button class="pill${S.qaWhen === v ? ' on' : ''}" data-act="qa-when" data-v="${v}">${l}</button>`).join('')
     + `<button class="pill" data-act="rem-new">Pick date and time</button>`;
-  const body = open.length || done.length
-    ? grp('Overdue', late) + grp('Today', today) + grp('Upcoming', later) + grp('Anytime', anytime) + grp('Done recently', done)
+  const unsGrp = waiting.length ? `<div class="grp"><h3>Unscheduled</h3><p class="muted" style="margin-bottom:4px">Things with no home yet. Tap Find a time and I'll pick a real gap.</p>${waiting.map(unsRow).join('')}</div>` : '';
+  const body = all.length || done.length
+    ? unsGrp + grp('Overdue', late) + grp('Today', today) + grp('Upcoming', later) + grp('Anytime', anytime) + grp('Done recently', done)
     : `<p class="muted" style="margin-top:22px">No reminders. Add one above.</p>`;
-  return headerHTML('Reminders', `${open.length} open`) + `<div class="qadd glass"><input id="qa" placeholder="Add a reminder" enterkeyhint="done" autocomplete="off"><button class="qa-go" data-act="qa-add">Add</button></div><div class="qa-when">${when}</div>` + body;
+  return headerHTML('Reminders', `${all.length} open`) + `<div class="qadd glass"><input id="qa" placeholder="Add a reminder" enterkeyhint="done" autocomplete="off"><button class="qa-go" data-act="qa-add">Add</button></div><div class="qa-when">${when}</div>` + body;
 }
 
 // ---------- sheets ----------
@@ -1008,7 +1184,7 @@ function openSheet(html) {
   $('#scrim').classList.add('show');
   requestAnimationFrame(() => sh.classList.add('show'));
 }
-function closeSheet() { $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); }
+function closeSheet() { S.sheetIs = null; $('#sheet').classList.remove('show'); $('#scrim').classList.remove('show'); }
 const val = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
 const num = (id, d = 0) => { const n = Number(val(id)); return Number.isFinite(n) && val(id) !== '' ? n : d; };
 const segVal = (id) => $(`#${id} button.on`)?.dataset.v ?? '';
@@ -1023,6 +1199,7 @@ function openAdd() {
     ${S.google ? `<div class="tgrid">${tpls.map((t) => `<button class="tpl" style="--c:${catOf(t.color_id).c}" data-act="tpl-use" data-id="${t.id}"><b>${esc(t.name)}</b><small>${fmtDur(t.duration_min)}${t.default_start ? `, ${fmtT(atTime(todayKey(), t.default_start))}` : ''}</small></button>`).join('')}</div>
     <button class="btn ghost" data-act="ev-custom">Custom event</button>` : `<p class="muted" style="margin-bottom:12px">Connect Google Calendar to add events.</p>`}
     <button class="btn ghost" data-act="rem-new">Reminder</button>
+    <button class="btn ghost" data-act="uns-new">Something to schedule</button>
     <button class="btn ghost" data-act="goal-new">Goal</button>`);
 }
 
@@ -1193,12 +1370,35 @@ async function deleteEvent(id, btn) {
   } catch (err) { btn.disabled = false; toast(err.message, true); }
 }
 
+function openSlotSheet() {
+  S.sheetIs = 'slot';
+  const { id, busy, proposal: p, error } = S.slot || {};
+  const r = S.data.reminders.find((x) => x.id === id);
+  if (!r) return;
+  let body;
+  if (busy) body = '<p class="loading">Looking for a gap…</p>';
+  else if (error) body = `<p class="lede">${esc(error)}</p><button class="btn ghost" data-act="rem-open" data-id="${id}">Pick a time myself</button>`;
+  else {
+    const st = atTime(p.day, p.start), en = new Date(+st + p.duration_min * 6e4);
+    body = `<div class="det">
+        <div class="det-row hot"><span>When</span><b>${esc(relDay(p.day))}, ${esc(fmtT(st))} to ${esc(fmtT(en))}</b></div>
+        <div class="det-row"><span>How long</span><b>${esc(fmtDur(p.duration_min))}</b></div>
+        ${p.why ? `<div class="det-row"><span>Why</span><b>${esc(p.why)}</b></div>` : ''}
+      </div>
+      <button class="btn" data-act="slot-accept">Add it</button>
+      <button class="btn ghost" data-act="slot-again">Find another time</button>
+      <button class="btn ghost" data-act="rem-open" data-id="${id}">Pick a time myself</button>`;
+  }
+  openSheet(`<div class="sheet-h"><h2>${esc(r.title)}</h2></div>${body}`);
+}
+
 // Reminder form
 function openRemForm(id) {
   const r = id ? S.data.reminders.find((x) => x.id === id) : null;
   openSheet(`<h2>${r ? 'Reminder' : 'New reminder'}</h2><p class="lede"></p>
     <label class="field"><span>What</span><input class="inp" id="rf-title" value="${esc(r?.title || '')}" placeholder="Reminder"></label>
     <div class="two"><label class="field"><span>Date</span><input class="inp" type="date" id="rf-date" value="${r?.due_date || ''}"></label><label class="field"><span>Time</span><input class="inp" type="time" id="rf-time" value="${r?.due_time || ''}"></label></div>
+    <label class="switch">I don't know when yet<input type="checkbox" id="rf-needs" ${r?.needs_time ? 'checked' : ''}></label>
     <div class="field"><span>Priority</span>${segHTML('rf-pri', [[2, 'Normal'], [3, 'High']], r?.priority || 2)}</div>
     <label class="field"><span>Notes</span><textarea class="inp" id="rf-notes" rows="3" placeholder="Optional">${esc(r?.notes || '')}</textarea></label>
     <button class="btn" data-act="rf-save" data-id="${r?.id || ''}">${r ? 'Save changes' : 'Add reminder'}</button>
@@ -1208,7 +1408,8 @@ async function saveRemForm(id, btn) {
   const title = val('rf-title');
   if (!title) return toast('Write the reminder first.', true);
   const old = id ? S.data.reminders.find((x) => x.id === id) : null;
-  const row = { ...(old || { id: uid(), done: false, done_at: null }), title, due_date: val('rf-date') || null, due_time: val('rf-date') ? (val('rf-time') || null) : null, priority: Number(segVal('rf-pri')) || 2, notes: val('rf-notes') };
+  const needs = !!$('#rf-needs')?.checked;
+  const row = { ...(old || { id: uid(), done: false, done_at: null }), title, due_date: needs ? null : (val('rf-date') || null), due_time: !needs && val('rf-date') ? (val('rf-time') || null) : null, priority: Number(segVal('rf-pri')) || 2, notes: val('rf-notes'), needs_time: needs };
   btn.disabled = true;
   try { const saved = await saveRow('reminders', row); upsertLocal('reminders', saved); closeSheet(); render(); toast(old ? 'Saved' : 'Reminder added'); }
   catch (err) { btn.disabled = false; toast(err.message, true); }
@@ -1218,7 +1419,7 @@ async function quickAddRem() {
   const title = input?.value.trim();
   if (!title) return;
   const due = S.qaWhen === 'today' ? todayKey() : S.qaWhen === 'tomorrow' ? dayKey(addDays(new Date(), 1)) : null;
-  const row = { id: uid(), title, due_date: due, due_time: null, priority: 2, notes: '', done: false, done_at: null };
+  const row = { id: uid(), title, due_date: due, due_time: null, priority: 2, notes: '', done: false, done_at: null, needs_time: S.qaWhen === 'needs' };
   upsertLocal('reminders', row);
   input.value = '';
   render(); $('#qa')?.focus();
@@ -1243,15 +1444,32 @@ function openGoalSheet(id) {
     body = `<div style="--c:${c}">${msOf(g.id).map((m) => `<div class="ms"><button class="check${m.done ? ' on' : ''}" data-act="ms-toggle" data-id="${m.id}">${m.done ? ICON.tick : ''}</button><span>${esc(m.title)}</span><button class="x" data-act="ms-del" data-id="${m.id}" aria-label="Remove step">×</button></div>`).join('')}</div>
       <div class="qadd glass" style="margin-top:14px"><input id="ms-new" placeholder="Add a step" autocomplete="off"><button class="qa-go" data-act="ms-add" data-id="${g.id}">Add</button></div>`;
   }
+  const rows = [];
+  rows.push(['Started', s.notStarted ? `${fmtDay(parseDay(startKey(g)))} (not yet)` : fmtDay(parseDay(startKey(g))), s.notStarted]);
+  if (g.deadline) {
+    const days = Math.round((parseDay(g.deadline) - sod(new Date())) / 864e5);
+    rows.push(['Deadline', `${fmtDay(parseDay(g.deadline))}${days >= 0 ? `, ${days} day${days === 1 ? '' : 's'} left` : ', passed'}`, days < 0]);
+  }
+  if (s.projected) rows.push(['Projected finish', fmtDay(parseDay(s.projected)), s.behind]);
+  if (s.need) rows.push([g.pace_mode === 'rate' ? 'Your rate' : 'Needed pace', s.need, false]);
+  rows.push(['Status', s.pace || '—', s.behind]);
+  const tip = (S.data?.checkin?.suggestions || []).find((x) => x.goal && g.title.toLowerCase().includes(x.goal.toLowerCase().slice(0, 12)));
   openSheet(`<div class="sheet-h"><span style="width:12px;height:12px;border-radius:50%;background:${c};flex:none"></span><h2>${esc(g.title)}</h2></div>
-    <p class="muted" style="margin:-8px 0 16px">${esc(s.pace || '')}${g.deadline ? `${s.pace ? ', ' : ''}due ${fmtDay(parseDay(g.deadline))}` : ''}</p>
+    <div class="det">${rows.map(([k, v, hot]) => `<div class="det-row${hot ? ' hot' : ''}"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>
+    ${tip ? `<p class="tip">${esc(tip.text)}</p>` : ''}
     ${body}
     <div style="margin-top:22px"><button class="btn ghost" data-act="goal-edit" data-id="${g.id}">Edit goal</button><button class="btn danger" data-act="goal-archive" data-id="${g.id}">Archive goal</button></div>`);
 }
 function setGoalType(t) {
   $('#gf-number').hidden = t !== 'number';
   $('#gf-streak').hidden = t !== 'streak';
-  $('#gf-deadline-f').hidden = t === 'streak';
+  $('#gf-pace').hidden = t === 'streak';
+  $('#gf-end-f').hidden = t !== 'streak';
+}
+function setPaceMode(m) {
+  $('#gf-dl-f').hidden = m === 'rate';
+  $('#gf-rate-f').hidden = m !== 'rate';
+  $('#gf-hint').textContent = m === 'rate' ? "It'll project your finish date from this." : "It'll work out the weekly pace you need.";
 }
 // True once you've typed anything, so we stop auto-changing fields under you.
 const goalTouched = () => !!(val('gf-title') || val('gf-target') || num('gf-current', 0));
@@ -1259,6 +1477,7 @@ const goalTouched = () => !!(val('gf-title') || val('gf-target') || num('gf-curr
 function openGoalForm(id) {
   const g = id ? goalById(id) : null;
   const type = g?.type || 'number';
+  const mode = g?.pace_mode || 'dates';
   draft = { goalType: type, newGoal: !g };
   openSheet(`<div class="sheet-h">${g ? `<button class="icon-btn" data-act="goal-open" data-id="${g.id}" aria-label="Back">${ICON.back}</button>` : ''}<h2>${g ? 'Edit goal' : 'New goal'}</h2></div>
     <label class="field"><span>Goal</span><input class="inp" id="gf-title" value="${esc(g?.title || '')}" placeholder="e.g. Emergency fund"></label>
@@ -1272,9 +1491,17 @@ function openGoalForm(id) {
       <div class="field"><span>How often</span>${segHTML('gf-freq', [['daily', 'Every day'], ['weekly', 'Times per week']], g?.frequency || 'daily')}</div>
       <label class="field"><span>Times per week (if weekly)</span><input class="inp" type="number" inputmode="numeric" id="gf-perweek" value="${g?.per_week ?? 3}"></label>
     </div>
-    <label class="field" id="gf-deadline-f" ${type === 'streak' ? 'hidden' : ''}><span>Deadline (optional)</span><input class="inp" type="date" id="gf-deadline" value="${g?.deadline || ''}"></label>
+    <label class="field"><span>Start date (leave blank to start now)</span><input class="inp" type="date" id="gf-start" value="${g?.start_date || ''}"></label>
+    <div id="gf-pace" ${type === 'streak' ? 'hidden' : ''}>
+      <div class="field"><span>Set the pace by</span>${segHTML('gf-mode', [['dates', 'A deadline'], ['rate', 'A weekly rate']], mode)}</div>
+      <label class="field" id="gf-dl-f" ${mode === 'rate' ? 'hidden' : ''}><span>Deadline</span><input class="inp" type="date" id="gf-deadline" value="${g?.deadline || ''}"></label>
+      <label class="field" id="gf-rate-f" ${mode === 'rate' ? '' : 'hidden'}><span>Per week</span><input class="inp" type="number" inputmode="decimal" id="gf-rate" value="${g?.rate ?? ''}" placeholder="e.g. 100"></label>
+      <p class="muted" id="gf-hint" style="margin:-6px 0 14px">${mode === 'rate' ? "It'll project your finish date from this." : "It'll work out the weekly pace you need."}</p>
+    </div>
+    <label class="field" id="gf-end-f" ${type === 'streak' ? '' : 'hidden'}><span>End date (optional)</span><input class="inp" type="date" id="gf-end" value="${g?.deadline || ''}"></label>
     <button class="btn" data-act="gf-save" data-id="${g?.id || ''}">${g ? 'Save goal' : 'Add goal'}</button>`);
 }
+
 async function saveGoalForm(id, btn) {
   const title = val('gf-title');
   if (!title) return toast('Name the goal first.', true);
@@ -1286,9 +1513,13 @@ async function saveGoalForm(id, btn) {
     title, category: segVal('gf-cat') || 'other', type,
     unit: val('gf-unit'), current, target: val('gf-target') === '' ? null : num('gf-target'), step: num('gf-step', 1),
     frequency: segVal('gf-freq') || 'daily', per_week: Math.max(1, num('gf-perweek', 3)),
-    deadline: type === 'streak' ? null : (val('gf-deadline') || null),
+    start_date: val('gf-start') || null,
+    pace_mode: type === 'streak' ? 'dates' : (segVal('gf-mode') || 'dates'),
+    rate: val('gf-rate') === '' ? null : num('gf-rate'),
+    deadline: type === 'streak' ? (val('gf-end') || null) : (segVal('gf-mode') === 'rate' ? (old?.deadline || null) : (val('gf-deadline') || null)),
   };
   if (type === 'number' && row.target == null) return toast('Set a target number.', true);
+  if (row.pace_mode === 'rate' && !(row.rate > 0)) return toast('Set how much per week.', true);
   btn.disabled = true;
   try {
     const saved = await saveRow('goals', row);
@@ -1414,6 +1645,7 @@ const A = {
   seg: (el) => {
     el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el));
     if (el.parentElement.id === 'gf-type') setGoalType(el.dataset.v);
+    if (el.parentElement.id === 'gf-mode') setPaceMode(el.dataset.v);
     if (el.parentElement.id === 'gf-cat' && draft?.newGoal && !goalTouched()) {
       // Picking an area on a blank form sets the sensible default for it.
       const d = { money: ['number', '$'], study: ['streak', ''], fitness: ['streak', ''], habits: ['streak', ''], work: ['milestone', ''], other: ['number', ''] }[el.dataset.v] || ['number', ''];
@@ -1439,6 +1671,13 @@ const A = {
     removeLocal('reminders', id); closeSheet(); render();
     try { await delRow('reminders', id); toast('Deleted'); } catch (err) { upsertLocal('reminders', r); render(); toast(err.message, true); }
   },
+  'slot-find': (el) => findSlot(el.dataset.id),
+  'slot-accept': (el) => acceptSlot(el),
+  'slot-again': () => findSlot(S.slot?.id),
+  'uns-new': () => { openRemForm(null); const c = $('#rf-needs'); if (c) c.checked = true; },
+  'weekly-open': openWeeklySheet,
+  'weekly-run': (el) => { if (el.closest('#sheet')) S.sheetIs = 'weekly'; ensureCheckin(true); },
+  'weekly-hide': () => { localStorage.setItem('launch.checkin.hid', planWeek()); render(); },
   'qa-when': (el) => { S.qaWhen = el.dataset.v; const v = $('#qa')?.value; render(); if (v) $('#qa').value = v; },
   'qa-add': quickAddRem,
   'goal-new': () => openGoalForm(null),

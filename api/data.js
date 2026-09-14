@@ -4,8 +4,8 @@ import { isConnected } from './_lib/google.js';
 
 const TABLES = {
   templates: { t: 'launch_templates', cols: ['id', 'name', 'color_id', 'duration_min', 'default_start', 'priority', 'prep_min', 'prep_note', 'travel_min', 'add_travel', 'turnaround_min', 'checklist', 'goal_id', 'sort'] },
-  reminders: { t: 'launch_reminders', cols: ['id', 'title', 'notes', 'due_date', 'due_time', 'priority', 'done', 'done_at'] },
-  goals: { t: 'launch_goals', cols: ['id', 'title', 'category', 'type', 'frequency', 'per_week', 'target', 'current', 'start_value', 'unit', 'step', 'deadline', 'archived', 'sort'] },
+  reminders: { t: 'launch_reminders', cols: ['id', 'title', 'notes', 'due_date', 'due_time', 'priority', 'done', 'done_at', 'needs_time'] },
+  goals: { t: 'launch_goals', cols: ['id', 'title', 'category', 'type', 'frequency', 'per_week', 'target', 'current', 'start_value', 'unit', 'step', 'start_date', 'deadline', 'pace_mode', 'rate', 'archived', 'sort'] },
   logs: { t: 'launch_goal_logs', cols: ['id', 'goal_id', 'day', 'value', 'note'] },
   milestones: { t: 'launch_milestones', cols: ['id', 'goal_id', 'title', 'done', 'sort'] },
   settings: { t: 'launch_settings', cols: ['id', 'value'] },
@@ -17,7 +17,7 @@ export default route(async (req, res) => {
   const d = db();
 
   if (req.method === 'GET') {
-    const [templates, openRem, doneRem, goals, logs, milestones, settings, google] = await Promise.all([
+    const [templates, openRem, doneRem, goals, logs, milestones, settings, checkin, google] = await Promise.all([
       q(d.from('launch_templates').select('*').order('sort').order('name')),
       q(d.from('launch_reminders').select('*').eq('done', false).order('due_date', { nullsFirst: false })),
       q(d.from('launch_reminders').select('*').eq('done', true).gte('done_at', daysAgo(7)).order('done_at', { ascending: false })),
@@ -25,9 +25,10 @@ export default route(async (req, res) => {
       q(d.from('launch_goal_logs').select('*').gte('day', daysAgo(400).slice(0, 10)).order('day')),
       q(d.from('launch_milestones').select('*').order('sort').order('created_at')),
       q(d.from('launch_settings').select('*')),
+      q(d.from('launch_checkins').select('*').gte('week_start', daysAgo(21).slice(0, 10)).order('week_start', { ascending: false }).limit(1)),
       isConnected(),
     ]);
-    return send(res, 200, { templates, reminders: [...openRem, ...doneRem], goals, logs, milestones, settings, google });
+    return send(res, 200, { templates, reminders: [...openRem, ...doneRem], goals, logs, milestones, settings, checkin: checkin[0] || null, google });
   }
 
   if (req.method !== 'POST') return send(res, 405, { error: 'Use GET or POST.' });
