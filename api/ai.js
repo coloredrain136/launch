@@ -53,7 +53,7 @@ How the day actually works — get this right, it is the whole point:
 - Never tell him to do something at a time he is driving, working, or not home yet.
 
 Other rules:
-- Use only the events, times, reminders, goals, and routine given. Never invent anything.
+- Use only the events, times, reminders, goals, and routine given. Never invent anything. Never name a goal, class, or certification that is not in the goals list, even if the profile mentions one.
 - Lead with what actually defines the day. Mention get-ready and leave-by times for anything that has them.
 - If there is open time and a goal is behind, say which open slot to use for it. Ignore goals that have not started yet.
 - If the day is light, say so plainly and point at the most useful thing to do with it.
@@ -80,12 +80,38 @@ ${who}
 Voice: a sharp, practical friend. Casual, direct, specific. No fluff, no motivational filler, no emojis.
 Rules:
 - Use only the goals, progress, open time, and events given. Never invent anything.
+- If the goals list is empty, say exactly that there are no goals set up yet and keep it to one or two sentences. Never name a goal, subject, certification, or project that is not in the list, even if the profile above mentions one. The profile is background for tone only, never a source of goals.
 - Be honest about what slipped. Don't soften it, don't pile on.
 - Ignore goals that haven't started yet. Mention them only if one starts this coming week.
 - For each goal that needs attention, name a real open window from next week where the work fits.
 - Suggestions: max 3, each tied to one goal.
 Return only JSON:
 {"headline":"max 9 words on the week","review":"2-4 short sentences","suggestions":[{"goal":"goal title","text":"max 16 words, names a real day and time"}]}`;
+
+const GOALQ = (who) => `You help set up one goal, one question at a time, inside a personal planner. The person:
+${who}
+
+You get what they've answered so far. Decide the single best next question, in their words, about their actual goal. Never ask something they already answered.
+
+The flow you are steering toward: what the goal is, roughly what area of life it's in, how it should be tracked, the number or checklist that defines "done", and when.
+
+Tracking types:
+- "number": anything that counts up to a target (money saved, pounds lost, chapters read, miles ridden).
+- "streak": doing a thing repeatedly with no finish line (gym 4x a week, reading daily).
+- "milestone": a list of steps that get checked off (launch a thing, plan an event).
+
+Ask the question the way a friend would, about their specific goal. For a savings goal ask what they're saving toward or how much they want to have. For a streak ask how many days a week feels realistic. Never ask a generic "what is your target value".
+
+Return only JSON:
+{"field":"title|category|type|unit|target|current|rate|per_week|steps|deadline|start_date|done",
+ "question":"max 14 words, conversational, about their goal specifically",
+ "hint":"max 12 words of help, or empty",
+ "suggest":"your best guess at the answer, or empty",
+ "options":["only for category or type: the allowed values"],
+ "input":"text|number|date|choice"}
+
+Allowed category values: fitness, study, money, habits, work, other.
+When everything needed is answered, return field "done" with a question that is a one-line summary of the goal.`;
 
 export default route(async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { error: 'Use POST.' });
@@ -130,6 +156,20 @@ export default route(async (req, res) => {
     };
     await q(db().from('launch_briefings').upsert(row));
     return send(res, 200, { briefing: row });
+  }
+
+  if (b.action === 'goalq') {
+    const answers = {};
+    for (const [k, v] of Object.entries(b.answers || {})) answers[clip(k, 20)] = clip(String(v), 120);
+    const out = await geminiJSON(GOALQ(await profile()), JSON.stringify({ answered: answers, today: clip(b.today, 10) }));
+    return send(res, 200, {
+      field: clip(out.field, 20) || 'done',
+      question: clip(out.question, 140),
+      hint: clip(out.hint, 100),
+      suggest: clip(out.suggest, 80),
+      options: (Array.isArray(out.options) ? out.options : []).slice(0, 6).map((x) => clip(x, 30)),
+      input: ['text', 'number', 'date', 'choice'].includes(out.input) ? out.input : 'text',
+    });
   }
 
   if (b.action === 'slot') {

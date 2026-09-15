@@ -44,7 +44,16 @@ input,select,textarea{font:inherit;color:var(--ink)}
   -webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%)}
 
 .app{max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 18px calc(env(safe-area-inset-bottom) + 120px)}
-@media(min-width:1000px){.app{max-width:1120px;padding-left:32px;padding-right:32px}}
+@media(min-width:760px){.app{max-width:720px;padding-left:28px;padding-right:28px}}
+@media(min-width:1000px){.app{max-width:1180px;padding-left:40px;padding-right:40px}
+  .dayname{font-size:56px}
+  .row{grid-template-columns:78px 6px minmax(0,1fr);column-gap:16px}
+  .row .t{font-size:14px}
+  .row .title{font-size:17px}
+  .row.p3 .title{font-size:21px}
+  .empty-day,.allday{margin-left:94px}
+  .sec h3{font-size:20px}}
+@media(min-width:1400px){.app{max-width:1360px}}
 
 /* header */
 .top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:10px 0 20px}
@@ -55,7 +64,7 @@ input,select,textarea{font:inherit;color:var(--ink)}
 .hdr-actions{display:flex;gap:8px}
 
 .today-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
-@media(min-width:1000px){.today-grid{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:36px}}
+@media(min-width:1000px){.today-grid{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:44px;align-items:start}}
 
 /* briefing */
 .brief{border-radius:26px;padding:22px 20px 16px}
@@ -128,6 +137,11 @@ input,select,textarea{font:inherit;color:var(--ink)}
 
 /* week strip */
 .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:6px;border-radius:20px}
+.sched-grid{display:grid;gap:8px}
+@media(min-width:1000px){
+  .sched-grid{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:44px;align-items:start}
+  .wd{padding:12px 0 13px}.wd b{font-size:22px}
+  .week{padding:8px;gap:6px}}
 .wd{display:grid;justify-items:center;gap:3px;padding:8px 0 9px;border-radius:14px;color:var(--ink-2)}
 .wd span{font-size:11px}
 .wd b{font-size:18px;font-weight:600;color:var(--ink)}
@@ -284,7 +298,45 @@ details.more[open] summary{margin-bottom:4px}
 .th.on{border-color:var(--dawn);color:var(--ink)}
 .rt{display:grid;grid-template-columns:minmax(0,1fr) 92px 104px 34px;gap:8px;align-items:center;margin-bottom:8px}
 .rt .x{color:var(--ink-3);font-size:20px;padding:6px}
+.rt2{padding:10px 0 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.rt2 .rt{margin-bottom:6px}
+.rt-sub{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-right:34px}
+.rt-sub label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-3)}
+.rt-sub .inp{min-height:38px;padding:7px 10px;font-size:14px}
 .rt .inp{min-height:42px;padding:9px 10px;font-size:15px}
+
+/* goal wizard */
+.wiz{padding:4px 0 6px;min-height:270px;display:flex;flex-direction:column}
+.wiz-dots{display:flex;gap:6px;margin-bottom:22px}
+.wiz-dots i{width:22px;height:4px;border-radius:2px;background:var(--field);transition:background .3s}
+.wiz-dots i.on{background:var(--dawn)}
+.wiz-q{font-family:var(--serif);font-weight:400;font-size:32px;line-height:1.1;letter-spacing:-.01em;margin-bottom:8px;text-wrap:balance;animation:rise .45s cubic-bezier(.2,.9,.2,1) both}
+.wiz-hint{color:var(--ink-3);font-size:14px;margin-bottom:18px}
+.wiz-in{margin-bottom:12px;font-size:18px;padding:15px 16px}
+.wiz-opts{display:grid;gap:9px;margin-bottom:14px}
+.wiz-opt{display:flex;align-items:center;gap:11px;padding:16px 17px;border-radius:16px;border:1px solid var(--line);background:var(--field);font-size:16px;font-weight:600}
+.wiz-opt i{width:11px;height:11px;border-radius:50%;flex:none}
+.wiz-opt span{flex:1;min-width:0}
+.wiz-opt em{font-style:normal;font-size:11px;font-weight:700;color:var(--dawn);padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--dawn) 16%,transparent)}
+.wiz-opt.sug{border-color:color-mix(in srgb,var(--dawn) 50%,transparent)}
+
+/* detail: give the facts room */
+.when-card{display:grid;gap:3px;padding:15px 18px;border-radius:18px;margin:2px 0 12px;
+  background:color-mix(in srgb,var(--c) 12%,transparent);border:1px solid color-mix(in srgb,var(--c) 26%,transparent)}
+.when-card b{font-size:24px;font-weight:700;letter-spacing:-.01em}
+.when-card span{font-size:14px;color:var(--ink-2)}
+.addr{display:flex;align-items:center;gap:9px;padding:13px 15px;border-radius:16px;border:1px solid var(--line);
+  background:var(--field);text-decoration:none;color:var(--ink);font-size:15px;margin-bottom:6px}
+.addr svg{width:19px;height:19px;color:var(--dawn);flex:none}
+.addr span{overflow-wrap:anywhere}
+.det-row2{display:grid;grid-template-columns:104px minmax(0,1fr);gap:14px;padding:11px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.det-row2:last-child{border-bottom:0}
+.det-row2>span{color:var(--ink-3);font-size:13px}
+.det-row2 b{font-size:17px;font-weight:650;display:block}
+.det-row2 small{display:block;color:var(--ink-3);font-size:13px;margin-top:2px;line-height:1.4}
+.det-row2.hot b{color:var(--dawn)}
+.row.lead .body b{display:block;font-size:14px;font-weight:700;color:var(--ink)}
+.row.lead .body span{display:block;font-size:13px;color:var(--ink-3);margin-top:1px}
 
 /* anchors + drag */
 .row.anchor .rail{background:linear-gradient(var(--dawn),color-mix(in srgb,var(--dawn) 30%,transparent));opacity:.8}
@@ -391,6 +443,7 @@ const ICON = {
   next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>',
   star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.6l2.5 5.2 5.6.8-4 4 .9 5.6-5-2.7-5 2.7.9-5.6-4-4 5.6-.8z"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6.5-5.7 6.5-10.3A6.5 6.5 0 0 0 5.5 10.7C5.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.3"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3.8M8.5 7.2L12 3.7l3.5 3.5"/><path d="M5.5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5v-6.5"/></svg>',
   clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
 };
@@ -436,6 +489,8 @@ const THEMES = {
     skies: [['rgba(60,130,100,.16)', 'rgba(40,90,80,.1)'], ['rgba(143,214,160,.2)', 'rgba(200,220,140,.1)'], ['rgba(110,190,150,.16)', 'rgba(90,160,140,.09)'], ['rgba(180,190,110,.16)', 'rgba(110,150,110,.1)'], ['rgba(50,110,90,.18)', 'rgba(30,70,70,.1)']] },
   ink: { name: 'Ink', v: { night: '#060709', 'night-2': '#0e1114', ink: '#f2f5f8', 'ink-2': '#9aa3ad', 'ink-3': '#606a75', line: 'rgba(255,255,255,.11)', glass: 'rgba(255,255,255,.045)', sheet: 'rgba(14,17,20,.94)', bar: 'rgba(14,17,20,.8)', hi: 'rgba(255,255,255,.13)', field: 'rgba(255,255,255,.06)', shadow: 'rgba(0,0,0,.5)', dawn: '#6ee7d4', 'dawn-ink': '#00211c' },
     skies: [['rgba(60,90,110,.14)', 'rgba(40,60,90,.08)'], ['rgba(110,231,212,.14)', 'rgba(80,140,160,.08)'], ['rgba(90,150,170,.12)', 'rgba(60,110,140,.07)'], ['rgba(110,231,212,.12)', 'rgba(70,100,140,.07)'], ['rgba(50,80,100,.14)', 'rgba(30,50,80,.08)']] },
+  blossom: { name: 'Blossom', v: { night: '#1a1016', 'night-2': '#26161f', ink: '#fceef4', 'ink-2': '#cfa8bd', 'ink-3': '#9a7387', line: 'rgba(255,225,240,.1)', glass: 'rgba(255,225,240,.05)', sheet: 'rgba(38,22,31,.93)', bar: 'rgba(38,22,31,.78)', hi: 'rgba(255,225,240,.13)', field: 'rgba(255,225,240,.07)', shadow: 'rgba(20,0,10,.4)', dawn: '#ff9ec4', 'dawn-ink': '#2b0616' },
+    skies: [['rgba(160,70,130,.2)', 'rgba(100,60,140,.12)'], ['rgba(255,158,196,.24)', 'rgba(255,190,150,.12)'], ['rgba(230,120,180,.18)', 'rgba(180,120,200,.1)'], ['rgba(255,120,160,.22)', 'rgba(190,90,180,.12)'], ['rgba(150,70,130,.2)', 'rgba(90,50,120,.1)']] },
   daylight: { name: 'Daylight', v: { night: '#f4f6fa', 'night-2': '#e9edf4', ink: '#131720', 'ink-2': '#4d5768', 'ink-3': '#7b8598', line: 'rgba(20,30,50,.12)', glass: 'rgba(255,255,255,.66)', sheet: 'rgba(250,251,253,.95)', bar: 'rgba(252,253,255,.82)', hi: 'rgba(20,30,50,.09)', field: 'rgba(20,30,50,.05)', shadow: 'rgba(40,60,100,.14)', dawn: '#b06d18', 'dawn-ink': '#fff8ec' },
     skies: [['rgba(120,130,200,.14)', 'rgba(150,170,220,.1)'], ['rgba(255,190,110,.24)', 'rgba(255,160,180,.12)'], ['rgba(120,180,255,.18)', 'rgba(160,210,255,.1)'], ['rgba(255,160,110,.2)', 'rgba(200,140,230,.12)'], ['rgba(150,140,230,.16)', 'rgba(120,150,220,.1)']] },
 };
@@ -471,6 +526,8 @@ const S = {
   qaNeedsTime: false,
   slot: null,
   avRange: 'weekend',
+  wiz: null,
+  wizAI: true,
   sheetIs: null,
   checkinBusy: false,
   errors: {},
@@ -582,8 +639,8 @@ const overrideFor = (k, id) => (S.data?.day_routines || []).find((o) => o.day ==
 // The wake-up block is an anchor like any other, it just comes from its own field.
 function allAnchors() {
   const r = routines();
-  return [{ id: 'wake', label: 'Good morning', time: r.wake || '06:00', days: 'all', mins: +r.morning_min || 10 }]
-    .concat((r.anchors || []).filter((a) => a.time && a.label).map((a) => ({ ...a, mins: 0 })));
+  return [{ id: 'wake', label: 'Good morning', time: r.wake || '06:00', days: 'all', mins: +r.morning_min || 10, travel_min: 0 }]
+    .concat((r.anchors || []).filter((a) => a.time && a.label).map((a) => ({ ...a, mins: +a.mins || 0, travel_min: +a.travel_min || 0 })));
 }
 // Anchors for one day, with that day's drags applied. Never touches Google.
 function anchorsOn(k) {
@@ -1195,28 +1252,52 @@ function lineupHTML(k) {
   let h = '';
   if (all.length) h += `<div class="allday">${all.map((e) => `<button class="chip" style="--c:${catOf(e.colorId).c}" data-act="ev" data-id="${esc(e.id)}">${esc(e.title)}</button>`).join('')}</div>`;
 
-  // Anchors and events share one sorted rail. Anchors are ours, events are Google's.
-  const items = anchorsOn(k).map((a) => ({ kind: 'anchor', a, at: +atTime(k, a.time) }))
-    .concat(timed.map((e) => ({ kind: 'event', e, at: +(leadOf(e)?.ready || e.start) })))
-    .sort((x, y) => x.at - y.at);
+  // Anchors, get-ready rows and events all sort on their own time, so nothing
+  // ends up visually out of order.
+  const items = [];
+  for (const a of anchorsOn(k)) {
+    items.push({ kind: 'anchor', a, at: +atTime(k, a.time) });
+    if (a.travel_min) items.push({ kind: 'leave', a, at: +atTime(k, a.time) - a.travel_min * 6e4 });
+  }
+  const leaveTimes = items.filter((i) => i.kind === 'leave').map((i) => i.at);
+  for (const e of timed) {
+    const l = leadOf(e);
+    // If an anchor already told you when to leave for roughly this, don't say it twice.
+    const covered = l && leaveTimes.some((t) => Math.abs(t - +l.ready) < 40 * 6e4);
+    if (l && !covered && e.end >= now && dayKey(l.ready) === k) items.push({ kind: 'lead', e, l, at: +l.ready });
+    items.push({ kind: 'event', e, at: +e.start });
+  }
+  items.sort((x, y) => x.at - y.at || (x.kind === 'event' ? 1 : 0) - (y.kind === 'event' ? 1 : 0));
   if (!items.length) return h + `<p class="empty-day">${all.length ? 'Nothing else scheduled.' : 'Nothing on the calendar.'} <button class="link-btn" data-act="add">Add something</button></p>`;
 
   let placed = !isToday;
   for (const it of items) {
     if (!placed && it.at > +now) { h += nowHTML(now); placed = true; }
     if (it.kind === 'anchor') { h += anchorRowHTML(k, it.a, now); continue; }
-    const e = it.e, l = leadOf(e), c = catOf(e.colorId).c, past = e.end < now;
-    if (l && !past && dayKey(l.ready) === k) {
-      const parts = [];
-      if (l.prep) parts.push(`<b>Get ready</b>${e.meta?.prep_note ? `: ${esc(e.meta.prep_note)}` : `, ${fmtDur(l.prep)}`}`);
-      if (l.travel) parts.push(`<b>Leave by ${fmtT(l.leave)}</b>, ${fmtDur(l.travel)} drive`);
-      h += `<div class="row lead" style="--c:${c}"><span class="t">${fmtT(l.ready)}</span><span class="rail"></span><div class="body">${parts.join('<br>')}</div></div>`;
-    }
-    h += evRow(e, c, past, now);
+    if (it.kind === 'leave') { h += leaveRowHTML(k, it.a); continue; }
+    if (it.kind === 'lead') { h += leadRowHTML(it.e, it.l); continue; }
+    h += evRow(it.e, catOf(it.e.colorId).c, it.e.end < now, now);
   }
   if (!placed) h += nowHTML(now);
   return h;
 }
+
+// Leave-by is the line that actually changes behaviour, so it leads.
+function leadRowHTML(e, l) {
+  const c = catOf(e.colorId).c;
+  const head = l.travel ? `Leave by ${fmtT(l.leave)}` : 'Start getting ready';
+  const bits = [];
+  if (l.travel) bits.push(`${fmtDur(l.travel)} drive`);
+  if (l.prep) bits.push(e.meta?.prep_note ? esc(e.meta.prep_note) : `${fmtDur(l.prep)} to get ready`);
+  return `<div class="row lead" style="--c:${c}"><span class="t">${fmtT(l.ready)}</span><span class="rail"></span>
+    <div class="body"><b>${head}</b>${bits.length ? `<span>${bits.join(' · ')}</span>` : ''}</div></div>`;
+}
+function leaveRowHTML(k, a) {
+  const leave = new Date(+atTime(k, a.time) - a.travel_min * 6e4);
+  return `<div class="row lead" style="--c:var(--dawn)"><span class="t">${fmtT(leave)}</span><span class="rail"></span>
+    <div class="body"><b>Leave by ${fmtT(leave)}</b><span>${fmtDur(a.travel_min)} drive to be there by ${fmtT(atTime(k, a.time))}</span></div></div>`;
+}
+
 function anchorRowHTML(k, a, now) {
   const st = atTime(k, a.time), en = a.mins ? new Date(+st + a.mins * 6e4) : null;
   const past = (en || st) < now && k <= todayKey();
@@ -1295,8 +1376,21 @@ function viewSchedule() {
   let body;
   if (!S.google) body = `<div class="empty-card glass"><p>Connect Google Calendar to see your schedule.</p><button class="btn" data-act="connect">Connect Google Calendar</button></div>`;
   else if (!S.loadedWeeks.has(dayKey(ws)) && !S.eventsReady) body = '<p class="loading">Loading…</p>';
-  else body = `<section class="sec"><h3>${esc(relDay(S.selDay))}</h3>${lineupHTML(S.selDay)}</section>`;
+  else body = `<div class="sched-grid"><section class="sec"><h3>${esc(relDay(S.selDay))}</h3>${lineupHTML(S.selDay)}</section><div>${weekRestHTML(ws)}</div></div>`;
   return headerHTML('Schedule', label, nav) + `<div class="week glass">${strip}</div>` + body;
+}
+
+// The rest of the week, for screens with room for it
+function weekRestHTML(ws) {
+  const days = [...Array(7)].map((_, i) => dayKey(addDays(ws, i))).filter((k) => k !== S.selDay);
+  const out = days.map((k) => {
+    const evs = eventsOn(k).sort((a, b) => pri(b) - pri(a)).slice(0, 3);
+    if (!evs.length) return '';
+    return `<div class="heads" role="button" tabindex="0" data-act="day-sel" data-k="${k}">
+      <span class="dot" style="--c:${catOf(evs[0].colorId).c}"></span>
+      <div><b>${esc(relDay(k))}</b><small>${esc(evs.map((e) => e.title).join(' · '))}</small></div></div>`;
+  }).filter(Boolean).join('');
+  return out ? `<section class="sec"><h3>Rest of the week</h3>${out}</section>` : '';
 }
 
 // Goals
@@ -1304,7 +1398,7 @@ function viewGoals() {
   const goals = activeGoals();
   const add = `<button class="icon-btn glass" data-act="weekly-open" aria-label="Weekly check-in">${ICON.star}</button><button class="icon-btn glass" data-act="goal-new" aria-label="New goal">${ICON.plus}</button>`;
   const sub = goals.length ? `${goals.length} active` : 'Track anything you’re working toward';
-  if (!goals.length) return headerHTML('Goals', sub, add) + `<div class="empty-card glass"><p>Add a goal to start tracking progress: savings, study streaks, a checklist, anything.</p><button class="btn" data-act="goal-new">New goal</button></div>`;
+  if (!goals.length) return headerHTML('Goals', sub, add) + `<div class="empty-card glass"><p>Nothing here yet. I'll walk you through setting one up, one question at a time.</p><button class="btn" data-act="goal-new">Set up a goal</button></div>`;
   return headerHTML('Goals', sub, add) + goals.map(goalCard).join('');
 }
 function goalCard(g) {
@@ -1458,19 +1552,21 @@ function openEventDetail(id) {
   const cat = catOf(e.colorId), m = e.meta || {}, l = leadOf(e), now = new Date();
   const list = m.checklist || [];
   const rows = [];
-  rows.push(['When', e.allDay ? `${fmtDay(e.start)}, all day` : `${fmtDay(e.start)}, ${fmtT(e.start)} to ${fmtT(e.end)}`, false]);
-  if (e.location) rows.push(['Where', e.location, false]);
-  if (l && l.prep) rows.push(['Get ready', `${fmtT(l.ready)} (${fmtDur(l.prep)})`, e.start > now]);
-  if (l && l.travel) rows.push(['Leave by', `${fmtT(l.leave)} (${fmtDur(l.travel)} drive)`, e.start > now]);
-  if (m.travel_min && !e.allDay) rows.push(['Home again', `about ${fmtT(new Date(+e.end + m.travel_min * 6e4))}`, false]);
+  if (l && l.travel) rows.push(['Leave by', fmtT(l.leave), `${fmtDur(l.travel)} drive`, e.start > now]);
+  if (l && l.prep) rows.push(['Get ready', fmtT(l.ready), m.prep_note || `${fmtDur(l.prep)} before you go`, e.start > now]);
+  if (m.travel_min && !e.allDay) rows.push(['Home again', `about ${fmtT(new Date(+e.end + m.travel_min * 6e4))}`, `${fmtT(e.end)} finish plus the ${fmtDur(m.travel_min)} drive back`, false]);
   const turn = turnaroundOf(e);
-  if (turn) rows.push(['Turnaround', `${fmtDur(turn)} at home first`, false]);
-  rows.push(['Priority', ['', 'Low', 'Normal', 'High'][pri(e)] + (m.source === 'ai' ? ' (AI guess)' : ''), pri(e) === 3]);
+  if (turn) rows.push(['Turnaround', fmtDur(turn), 'at home before the next thing', false]);
+  rows.push(['Priority', ['', 'Low', 'Normal', 'High'][pri(e)], m.source === 'ai' ? 'AI guess, tap Edit to change' : '', pri(e) === 3]);
   const g = e.goalId && goalById(e.goalId);
   const done = list.filter((i) => i.done).length;
+  const when = e.allDay
+    ? `<b>All day</b><span>${esc(fmtDay(e.start))}</span>`
+    : `<b>${esc(fmtT(e.start))} – ${esc(fmtT(e.end))}</b><span>${esc(fmtDay(e.start))} · ${esc(fmtDur((e.end - e.start) / 6e4))}</span>`;
   openSheet(`<div class="sheet-h"><span style="width:12px;height:12px;border-radius:50%;background:${cat.c};flex:none"></span><h2>${esc(e.title)}</h2></div>
-    <div class="det">${rows.map(([k, v, hot]) => `<div class="det-row${hot ? ' hot' : ''}"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>
-    ${m.prep_note ? `<p class="lede" style="margin-top:-8px">${esc(m.prep_note)}</p>` : ''}
+    <div class="when-card" style="--c:${cat.c}">${when}</div>
+    ${e.location ? `<a class="addr" href="https://maps.google.com/?q=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">${ICON.pin}<span>${esc(e.location)}</span></a>` : ''}
+    <div class="det">${rows.map(([k, v, sub, hot]) => `<div class="det-row2${hot ? ' hot' : ''}"><span>${k}</span><div><b>${esc(v)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div></div>`).join('')}</div>
     <div class="ck-head"><h3>Prep checklist</h3><span class="muted">${list.length ? `${done} of ${list.length}` : ''}</span></div>
     <div style="--c:${cat.c}">${list.map((it, i) => `<div class="ck${it.done ? ' done' : ''}"><button class="box${it.done ? ' on' : ''}" data-act="ck-toggle" data-id="${esc(e.id)}" data-i="${i}" aria-label="${it.done ? 'Uncheck' : 'Check'}">${it.done ? ICON.tick : ''}</button><span>${esc(it.t)}</span><button class="x" data-act="ck-del" data-id="${esc(e.id)}" data-i="${i}" aria-label="Remove">×</button></div>`).join('') || '<p class="muted">Nothing to prep.</p>'}</div>
     <div class="qadd glass" style="margin-top:12px"><input id="ck-new" placeholder="Add a prep item" autocomplete="off"><button class="qa-go" data-act="ck-add" data-id="${esc(e.id)}">Add</button></div>
@@ -1671,6 +1767,133 @@ function setPaceMode(m) {
 // True once you've typed anything, so we stop auto-changing fields under you.
 const goalTouched = () => !!(val('gf-title') || val('gf-target') || num('gf-current', 0));
 
+// ---------- new goal: one question at a time ----------
+const WIZ_CATS = ['fitness', 'study', 'money', 'habits', 'work', 'other'];
+const TYPE_LABEL = { number: 'A number I count up', streak: 'Something I do repeatedly', milestone: 'A list of steps' };
+
+// Works with no AI at all. The AI only makes the wording better.
+function nextLocal(a) {
+  if (!a.title) return { field: 'title', question: 'What are you working toward?', hint: 'Name it how you\'d say it out loud', input: 'text' };
+  if (!a.category) return { field: 'category', question: 'What part of life is this?', input: 'choice', options: WIZ_CATS };
+  if (!a.type) {
+    const guess = { money: 'number', fitness: 'streak', habits: 'streak', study: 'streak', work: 'milestone' }[a.category] || 'number';
+    return { field: 'type', question: 'How should I track it?', input: 'choice', options: ['number', 'streak', 'milestone'], suggest: guess };
+  }
+  if (a.type === 'number') {
+    if (!a.unit) return { field: 'unit', question: 'What are you counting?', hint: 'A symbol or short word: $, lbs, books', input: 'text', suggest: a.category === 'money' ? '$' : '' };
+    if (!a.target) return { field: 'target', question: a.category === 'money' ? 'How much do you want saved?' : `How many ${a.unit} is done?`, input: 'number' };
+    if (!a.current) return { field: 'current', question: 'Where are you starting from?', hint: 'Put 0 if you\'re starting fresh', input: 'number', suggest: '0' };
+  }
+  if (a.type === 'streak' && !a.per_week) return { field: 'per_week', question: 'How many days a week is realistic?', hint: 'Be honest, not ambitious', input: 'number', suggest: '3' };
+  if (a.type === 'milestone' && !a.steps) return { field: 'steps', question: 'What are the steps? One per line.', input: 'text' };
+  if (!a.start_date) return { field: 'start_date', question: 'When does this start?', hint: 'Leave it blank to start today', input: 'date' };
+  if (!a.deadline && a.type !== 'streak') return { field: 'deadline', question: 'When do you want it done?', hint: 'Blank is fine if there\'s no date', input: 'date' };
+  return { field: 'done', question: 'Here\'s what I\'ve got.' };
+}
+async function wizAsk() {
+  const a = S.wiz.answers;
+  const local = nextLocal(a);
+  // Steps 1 and 2 are always the same, so don't spend a round trip on them.
+  if (local.field === 'title' || local.field === 'category' || local.field === 'done' || !S.wizAI) {
+    S.wiz.q = local; S.wiz.busy = false; return openWizard();
+  }
+  S.wiz.busy = true; openWizard();
+  try {
+    const j = await api('/api/ai', { method: 'POST', body: { action: 'goalq', answers: a, today: todayKey() } });
+    // The AI picks the wording; the local script stays in charge of what's still missing.
+    S.wiz.q = (j.field === local.field) ? { ...local, question: j.question || local.question, hint: j.hint || local.hint, suggest: j.suggest || local.suggest } : local;
+  } catch (err) {
+    S.wizAI = false; S.wiz.q = local;
+  }
+  S.wiz.busy = false;
+  openWizard();
+}
+function openWizard(reset) {
+  if (reset) { S.wiz = { answers: {}, q: null, busy: false, order: [] }; S.wizAI = true; }
+  S.sheetIs = 'wiz';
+  if (!S.wiz.q && !S.wiz.busy) return wizAsk();
+  const { q, busy, answers } = S.wiz;
+  const steps = Object.keys(answers).length;
+  if (busy) return openSheet(`<div class="wiz"><div class="wiz-dots">${dots(steps)}</div><h2 class="wiz-q">Thinking…</h2></div>`);
+
+  if (q.field === 'done') {
+    const a = answers;
+    const lines = [['Goal', a.title], ['Area', GOALCATS[a.category]?.name || a.category], ['Tracked as', TYPE_LABEL[a.type]]];
+    if (a.type === 'number') lines.push(['Target', `${fmtNum(a.target, a.unit)}${+a.current ? `, from ${fmtNum(a.current, a.unit)}` : ''}`]);
+    if (a.type === 'streak') lines.push(['How often', `${a.per_week}x a week`]);
+    if (a.type === 'milestone') lines.push(['Steps', String(a.steps).split('\n').filter(Boolean).length]);
+    if (a.start_date) lines.push(['Starts', fmtDay(parseDay(a.start_date))]);
+    if (a.deadline) lines.push(['Done by', fmtDay(parseDay(a.deadline))]);
+    return openSheet(`<div class="wiz"><div class="wiz-dots">${dots(steps)}</div>
+      <h2 class="wiz-q">${esc(a.title)}</h2>
+      <div class="det">${lines.map(([k, v]) => `<div class="det-row2"><span>${k}</span><div><b>${esc(String(v))}</b></div></div>`).join('')}</div>
+      <button class="btn" data-act="wiz-save">Create this goal</button>
+      <button class="btn ghost" data-act="wiz-back">Change something</button></div>`);
+  }
+
+  let input;
+  if (q.input === 'choice') {
+    const opts = q.options || [];
+    input = `<div class="wiz-opts">${opts.map((o) => {
+      const label = TYPE_LABEL[o] || GOALCATS[o]?.name || o;
+      const dot = GOALCATS[o] ? `<i style="background:${GOALCATS[o].c}"></i>` : '';
+      return `<button class="wiz-opt${q.suggest === o ? ' sug' : ''}" data-act="wiz-pick" data-v="${esc(o)}">${dot}<span>${esc(label)}</span>${q.suggest === o ? '<em>suggested</em>' : ''}</button>`;
+    }).join('')}</div>`;
+  } else if (q.field === 'steps') {
+    input = `<textarea class="inp wiz-in" id="wiz-val" rows="5" placeholder="One step per line"></textarea><button class="btn" data-act="wiz-next">Next</button>`;
+  } else {
+    const type = q.input === 'number' ? 'number' : q.input === 'date' ? 'date' : 'text';
+    input = `<input class="inp wiz-in" id="wiz-val" type="${type}" ${type === 'number' ? 'inputmode="decimal"' : ''} value="${esc(q.suggest || '')}" enterkeyhint="next">
+      <button class="btn" data-act="wiz-next">Next</button>${q.input === 'date' ? '<button class="btn ghost" data-act="wiz-skip">Skip this</button>' : ''}`;
+  }
+  openSheet(`<div class="wiz"><div class="wiz-dots">${dots(steps)}</div>
+    <h2 class="wiz-q">${esc(q.question)}</h2>
+    ${q.hint ? `<p class="wiz-hint">${esc(q.hint)}</p>` : ''}
+    ${input}
+    ${steps ? '<button class="btn ghost" data-act="wiz-back">Back</button>' : ''}</div>`);
+  setTimeout(() => { const el = $('#wiz-val'); if (el && q.input !== 'date') { el.focus(); el.select?.(); } }, 260);
+}
+const dots = (n) => [...Array(7)].map((_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('');
+
+function wizAnswer(field, value) {
+  S.wiz.answers[field] = value;
+  S.wiz.order = (S.wiz.order || []).concat(field);
+  S.wiz.q = null;
+  wizAsk();
+}
+function wizBack() {
+  const order = S.wiz.order || [];
+  const last = order.pop();
+  if (last) delete S.wiz.answers[last];
+  S.wiz.order = order; S.wiz.q = null;
+  wizAsk();
+}
+async function wizSave(btn) {
+  const a = S.wiz.answers;
+  btn.disabled = true; btn.textContent = 'Creating…';
+  const row = {
+    id: uid(), title: a.title, category: a.category, type: a.type,
+    unit: a.unit || '', current: +a.current || 0, start_value: +a.current || 0,
+    target: a.type === 'number' ? +a.target : null, step: 1,
+    frequency: a.type === 'streak' ? 'weekly' : 'daily', per_week: Math.max(1, +a.per_week || 3),
+    start_date: a.start_date || null, deadline: a.deadline || null,
+    pace_mode: 'dates', rate: null, archived: false, sort: (S.data.goals.length || 0) + 1,
+  };
+  try {
+    const saved = await saveRow('goals', row);
+    upsertLocal('goals', saved);
+    if (a.type === 'milestone') {
+      const steps = String(a.steps || '').split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 20);
+      for (let i = 0; i < steps.length; i++) {
+        const m = { id: uid(), goal_id: saved.id, title: steps[i], done: false, sort: i + 1 };
+        upsertLocal('milestones', m);
+        await saveRow('milestones', m);
+      }
+    }
+    S.wiz = null; render(); openGoalSheet(saved.id); toast('Goal created');
+  } catch (err) { btn.disabled = false; btn.textContent = 'Create this goal'; toast(err.message, true); }
+}
+
 function openGoalForm(id) {
   const g = id ? goalById(id) : null;
   const type = g?.type || 'number';
@@ -1736,7 +1959,7 @@ function openSettings() {
     <section class="set"><h3>Theme</h3><p class="muted">Changes the whole app, everywhere you use it.</p>
       <div class="theme-grid">${Object.entries(THEMES).map(([id, t]) => `<button class="th${id === S.theme ? ' on' : ''}" data-act="theme-set" data-v="${id}"><span class="sw2" style="background:linear-gradient(135deg,${t.v.night},${t.v['night-2']})"><i style="background:${t.v.dawn}"></i></span>${t.name}</button>`).join('')}</div>
     </section>
-    <section class="set"><h3>Routines</h3><p class="muted">Invisible anchors. They never touch your calendar, but the AI plans around them.</p>
+    <section class="set"><h3>Routines</h3><p class="muted">These show on your day but never touch Google Calendar. Add a drive time and you'll get a leave-by line too.</p>
       <div class="two"><label class="field"><span>Wake up</span><input class="inp" type="time" id="rt-wake" value="${esc(r.wake || '')}"></label><label class="field"><span>Day winds down</span><input class="inp" type="time" id="rt-end" value="${esc(r.day_end || '22:00')}"></label></div>
       <div class="two"><label class="field"><span>Good morning block (min)</span><input class="inp" type="number" inputmode="numeric" id="rt-morning" value="${esc(String(r.morning_min ?? 10))}"></label><label class="field"><span>Home base</span><input class="inp" id="rt-home" value="${esc(r.home_address || '')}" placeholder="Fenton, MI"></label></div>
       <div id="rt-list">${(r.anchors || []).map((a, i) => anchorRow(a, i)).join('')}</div>
@@ -1751,18 +1974,22 @@ function openSettings() {
     <button class="btn danger" data-act="signout" style="margin-top:12px">Sign out on this device</button>`);
 }
 function anchorRow(a, i) {
-  return `<div class="rt" data-row="${i}">
-    <input class="inp" value="${esc(a.label || '')}" placeholder="What" data-f="label">
-    <input class="inp" type="time" value="${esc(a.time || '')}" data-f="time">
-    <select class="inp" data-f="days">${[['all', 'Every day'], ['weekdays', 'Weekdays'], ['weekends', 'Weekends']].map(([v, l]) => `<option value="${v}" ${a.days === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
-    <button class="x" data-act="rt-del" data-i="${i}" aria-label="Remove">×</button></div>`;
+  return `<div class="rt2" data-row="${i}">
+    <div class="rt"><input class="inp" value="${esc(a.label || '')}" placeholder="What" data-f="label">
+      <input class="inp" type="time" value="${esc(a.time || '')}" data-f="time">
+      <select class="inp" data-f="days">${[['all', 'Every day'], ['weekdays', 'Weekdays'], ['weekends', 'Weekends']].map(([v, l]) => `<option value="${v}" ${a.days === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <button class="x" data-act="rt-del" data-i="${i}" aria-label="Remove">×</button></div>
+    <div class="rt-sub"><label>Drive there<input class="inp" type="number" inputmode="numeric" value="${esc(String(a.travel_min || ''))}" placeholder="0 min" data-f="travel"></label>
+      <label>Lasts<input class="inp" type="number" inputmode="numeric" value="${esc(String(a.mins || ''))}" placeholder="0 min" data-f="mins"></label></div></div>`;
 }
 function readAnchors() {
-  return [...document.querySelectorAll('#rt-list .rt')].map((row, i) => ({
+  return [...document.querySelectorAll('#rt-list .rt2')].map((row, i) => ({
     id: 'a' + (i + 1),
     label: row.querySelector('[data-f="label"]').value.trim().slice(0, 60),
     time: row.querySelector('[data-f="time"]').value,
     days: row.querySelector('[data-f="days"]').value,
+    travel_min: Math.max(0, Math.min(240, Math.round(+row.querySelector('[data-f="travel"]').value || 0))),
+    mins: Math.max(0, Math.min(240, Math.round(+row.querySelector('[data-f="mins"]').value || 0))),
   })).filter((a) => a.label && a.time);
 }
 async function saveRoutines(btn) {
@@ -1890,7 +2117,16 @@ const A = {
   'weekly-hide': () => { localStorage.setItem('launch.checkin.hid', planWeek()); render(); },
   'qa-when': (el) => { S.qaWhen = el.dataset.v; const v = $('#qa')?.value; render(); if (v) $('#qa').value = v; },
   'qa-add': quickAddRem,
-  'goal-new': () => openGoalForm(null),
+  'goal-new': () => openWizard(true),
+  'wiz-pick': (el) => wizAnswer(S.wiz.q.field, el.dataset.v),
+  'wiz-next': () => {
+    const v = val('wiz-val');
+    if (!v && S.wiz.q.input !== 'date') return toast('Fill that in first.', true);
+    wizAnswer(S.wiz.q.field, v);
+  },
+  'wiz-skip': () => wizAnswer(S.wiz.q.field, ''),
+  'wiz-back': wizBack,
+  'wiz-save': (el) => wizSave(el),
   'goal-open': (el) => openGoalSheet(el.dataset.id),
   'goal-edit': (el) => openGoalForm(el.dataset.id),
   'gf-save': (el) => saveGoalForm(el.dataset.id, el),
@@ -1936,7 +2172,7 @@ const A = {
     catch (err) { toast(err.message, true); }
   },
   'rt-add': () => { const list = $('#rt-list'); list.insertAdjacentHTML('beforeend', anchorRow({ label: '', time: '', days: 'all' }, list.children.length)); },
-  'rt-del': (el) => { el.closest('.rt').remove(); },
+  'rt-del': (el) => { el.closest('.rt2').remove(); },
   'rt-save': (el) => saveRoutines(el),
   'tpl-edit': (el) => openTplForm(el.dataset.id || null),
   'tf-save': (el) => saveTplForm(el.dataset.id, el),
@@ -2055,6 +2291,7 @@ document.addEventListener('keydown', (ev) => {
   if (ev.target.id === 'pass') { ev.preventDefault(); return A.login($('[data-act="login"]')); }
   if (ev.target.id === 'ms-new') { ev.preventDefault(); return A['ms-add']($('[data-act="ms-add"]')); }
   if (ev.target.id === 'ck-new') { ev.preventDefault(); return A['ck-add']($('[data-act="ck-add"]')); }
+  if (ev.target.id === 'wiz-val' && ev.target.tagName !== 'TEXTAREA') { ev.preventDefault(); return A['wiz-next'](); }
   if (ev.target.getAttribute('role') === 'button') { ev.preventDefault(); ev.target.click(); }
 });
 document.addEventListener('change', (ev) => {
