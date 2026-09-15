@@ -286,6 +286,28 @@ details.more[open] summary{margin-bottom:4px}
 .rt .x{color:var(--ink-3);font-size:20px;padding:6px}
 .rt .inp{min-height:42px;padding:9px 10px;font-size:15px}
 
+/* anchors + drag */
+.row.anchor .rail{background:linear-gradient(var(--dawn),color-mix(in srgb,var(--dawn) 30%,transparent));opacity:.8}
+.row.anchor .title{font-size:15px;font-weight:600;color:var(--ink-2)}
+.row.wake .title{font-size:18px;font-weight:700;color:var(--ink)}
+.row.wake .rail{background:var(--dawn);opacity:1}
+.row .moved{font-style:normal;font-size:11px;font-weight:700;color:var(--dawn);margin-left:8px;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--dawn) 16%,transparent)}
+.row[data-drag]{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.row.dragging{position:relative;z-index:5;touch-action:none}
+.row.dragging .body{background:var(--sheet);border-radius:16px;box-shadow:0 16px 40px var(--shadow);outline:1px solid var(--line)}
+.row.dragging .title{color:var(--ink)}
+.row.press{transition:transform .18s}
+.row.press .body{transform:scale(.985)}
+.drag-chip{position:fixed;z-index:70;left:50%;transform:translate(-50%,-50%);padding:9px 16px;border-radius:999px;background:var(--dawn);color:var(--dawn-ink);font-weight:800;font-size:16px;pointer-events:none;box-shadow:0 10px 30px var(--shadow);font-variant-numeric:tabular-nums}
+.drag-hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 96px);transform:translateX(-50%);z-index:70;font-size:13px;color:var(--ink-2);background:var(--sheet);border:1px solid var(--line);padding:8px 14px;border-radius:999px;pointer-events:none;white-space:nowrap}
+
+/* availability */
+.av-day{margin-bottom:16px}
+.av-day h4{font-size:15px;font-weight:650;margin-bottom:6px}
+.av-win{display:inline-block;padding:7px 12px;border-radius:999px;font-size:14px;background:color-mix(in srgb,var(--ok) 15%,transparent);border:1px solid color-mix(in srgb,var(--ok) 38%,transparent);margin:0 6px 6px 0}
+.av-none{font-size:14px;color:var(--ink-3)}
+.av-prev{border-radius:18px;padding:16px;max-height:320px;overflow:auto;margin-bottom:16px}
+
 /* unscheduled + tips */
 .rem.uns{grid-template-columns:28px minmax(0,1fr) auto;align-items:center}
 .find{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;font-size:13px;font-weight:600;color:var(--dawn);border:1px solid color-mix(in srgb,var(--dawn) 45%,transparent);background:color-mix(in srgb,var(--dawn) 12%,transparent);white-space:nowrap;flex:none}
@@ -369,6 +391,7 @@ const ICON = {
   next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>',
   star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.6l2.5 5.2 5.6.8-4 4 .9 5.6-5-2.7-5 2.7.9-5.6-4-4 5.6-.8z"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3.8M8.5 7.2L12 3.7l3.5 3.5"/><path d="M5.5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5v-6.5"/></svg>',
   clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
 };
 
@@ -447,6 +470,7 @@ const S = {
   qaWhen: '',
   qaNeedsTime: false,
   slot: null,
+  avRange: 'weekend',
   sheetIs: null,
   checkinBusy: false,
   errors: {},
@@ -530,10 +554,15 @@ function headsUp() {
   return out.slice(0, 5);
 }
 function freeGaps(k) {
-  const d0 = parseDay(k);
-  const w0 = new Date(d0); w0.setHours(7, 0, 0, 0);
-  const w1 = new Date(d0); w1.setHours(22, 0, 0, 0);
-  const blocks = eventsOn(k).filter((e) => !e.allDay).map((e) => { const l = leadOf(e); return [+(l ? l.ready : e.start), +e.end]; }).sort((a, b) => a[0] - b[0]);
+  const d0 = parseDay(k), r = routines();
+  const wake = anchorsOn(k).find((a) => a.id === 'wake')?.time || r.wake || '07:00';
+  const w0 = atTime(k, wake);
+  const w1 = atTime(k, r.day_end || '22:00');
+  // A block runs from when he starts getting ready to when he is actually back home.
+  const blocks = eventsOn(k).filter((e) => !e.allDay).map((e) => {
+    const l = leadOf(e), back = (e.meta?.travel_min || 0) * 6e4;
+    return [+(l ? l.ready : e.start), +e.end + back];
+  }).sort((a, b) => a[0] - b[0]);
   const gaps = [];
   let cur = +w0;
   for (const [s, e] of blocks) {
@@ -545,14 +574,40 @@ function freeGaps(k) {
 }
 
 // ---------- routines (invisible anchors) ----------
-const DEF_ROUTINES = { wake: '06:00', home_address: '', anchors: [] };
+const DEF_ROUTINES = { wake: '06:00', home_address: '', anchors: [], morning_min: 10, day_end: '22:00' };
 const routines = () => ({ ...DEF_ROUTINES, ...((S.data?.settings || []).find((x) => x.id === 'routines')?.value || {}) });
 const anchorDays = (a) => (a.days === 'weekdays' ? 'Weekdays' : a.days === 'weekends' ? 'Weekends' : 'Every day');
+const overrideFor = (k, id) => (S.data?.day_routines || []).find((o) => o.day === k && o.anchor_id === id);
+
+// The wake-up block is an anchor like any other, it just comes from its own field.
+function allAnchors() {
+  const r = routines();
+  return [{ id: 'wake', label: 'Good morning', time: r.wake || '06:00', days: 'all', mins: +r.morning_min || 10 }]
+    .concat((r.anchors || []).filter((a) => a.time && a.label).map((a) => ({ ...a, mins: 0 })));
+}
+// Anchors for one day, with that day's drags applied. Never touches Google.
 function anchorsOn(k) {
   const dow = parseDay(k).getDay(), wknd = dow === 0 || dow === 6;
-  return (routines().anchors || []).filter((a) => a.time && (a.days === 'all' || (a.days === 'weekdays' && !wknd) || (a.days === 'weekends' && wknd)))
+  return allAnchors()
+    .filter((a) => a.days === 'all' || (a.days === 'weekdays' && !wknd) || (a.days === 'weekends' && wknd))
+    .map((a) => { const o = overrideFor(k, a.id); return o ? { ...a, time: o.time || a.time, hidden: o.hidden } : a; })
+    .filter((a) => !a.hidden && a.time)
     .sort((a, b) => a.time.localeCompare(b.time));
 }
+async function moveAnchor(k, id, time) {
+  const row = { id: `${k}:${id}`, day: k, anchor_id: id, time, hidden: false };
+  const prev = overrideFor(k, id);
+  upsertLocal('day_routines', row); render();
+  try { await saveRow('day_routines', row); S.briefing = null; }
+  catch (err) { if (prev) upsertLocal('day_routines', prev); else removeLocal('day_routines', row.id); render(); toast(err.message, true); }
+}
+async function resetAnchor(k, id) {
+  const o = overrideFor(k, id);
+  if (!o) return;
+  removeLocal('day_routines', o.id); render();
+  try { await delRow('day_routines', o.id); } catch (err) { upsertLocal('day_routines', o); render(); toast(err.message, true); }
+}
+
 const tplOf = (e) => (S.data?.templates || []).find((t) => t.id === e.templateId);
 const turnaroundOf = (e) => tplOf(e)?.turnaround_min || 0;
 
@@ -748,6 +803,117 @@ async function acceptSlot(btn) {
   } catch (err) { btn.disabled = false; btn.textContent = 'Add it'; toast(err.message, true); }
 }
 
+// ---------- availability: "what are you doing this weekend" ----------
+const AV_RANGES = {
+  weekend: 'This weekend',
+  week: 'Rest of this week',
+  next7: 'Next 7 days',
+};
+function avDays(range) {
+  const out = [], today = sod(new Date());
+  if (range === 'next7') { for (let i = 0; i < 7; i++) out.push(dayKey(addDays(today, i))); return out; }
+  if (range === 'week') { let d = new Date(today); while (out.length < 8) { out.push(dayKey(d)); if (d.getDay() === 0) break; d = addDays(d, 1); } return out; }
+  const sat = addDays(today, (6 - today.getDay() + 7) % 7);
+  return today.getDay() === 6 ? [dayKey(today), dayKey(addDays(today, 1))] : today.getDay() === 0 ? [dayKey(today)] : [dayKey(sat), dayKey(addDays(sat, 1))];
+}
+// Free means actually free: after the drive home, before the next get-ready.
+function availability(range, minMin = 45) {
+  return avDays(range).map((k) => ({
+    k,
+    windows: freeGaps(k).filter((g) => g.e - g.s >= minMin * 6e4).map((g) => ({ s: g.s, e: g.e, label: `${fmtT(g.s)} – ${fmtT(g.e)}` })),
+  }));
+}
+function avPreview(days) {
+  return days.map((d) => `<div class="av-day"><h4>${esc(relDay(d.k))}${d.k === todayKey() ? '' : `, ${esc(fmtDay(parseDay(d.k)))}`}</h4>${
+    d.windows.length ? d.windows.map((w) => `<span class="av-win">${esc(w.label)}</span>`).join('') : '<span class="av-none">Booked up</span>'}</div>`).join('');
+}
+function openAvSheet(range = S.avRange || 'weekend') {
+  S.avRange = range;
+  if (!S.google) return openSheet('<div class="sheet-h"><h2>Share availability</h2></div><p class="lede">Connect Google Calendar first so I know when you\'re actually free.</p>');
+  const days = availability(range);
+  const free = days.reduce((n, d) => n + d.windows.length, 0);
+  openSheet(`<div class="sheet-h"><h2>Share availability</h2></div>
+    <p class="lede">An image you can text. It shows when you're free, never what you're doing.</p>
+    ${segHTML('av-range', Object.entries(AV_RANGES), range)}
+    <div class="av-prev glass" style="margin-top:14px">${free ? avPreview(days) : '<span class="av-none">No open windows in this stretch.</span>'}</div>
+    <button class="btn" data-act="av-share" ${free ? '' : 'disabled'}>Make the image</button>`);
+}
+
+// Draws the card at 2x so it stays sharp in Messages.
+function avCanvas(range) {
+  const days = availability(range), t = THEMES[S.theme] || THEMES.midnight;
+  const W = 900, P = 56, S2 = 2;
+  const rows = days.map((d) => ({ d, lines: d.windows.length ? d.windows.map((w) => w.label) : ['Booked up'] }));
+  let H = P + 132;
+  for (const r of rows) H += 44 + r.lines.length * 52 + 22;
+  H += P - 10;
+  const cv = document.createElement('canvas');
+  cv.width = W * S2; cv.height = H * S2;
+  const x = cv.getContext('2d');
+  x.scale(S2, S2);
+  const dark = t.v.night !== '#f4f6fa';
+  x.fillStyle = t.v.night; x.fillRect(0, 0, W, H);
+  const glow = x.createRadialGradient(W / 2, -60, 10, W / 2, -60, 620);
+  glow.addColorStop(0, t.skies[1][0]); glow.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = glow; x.fillRect(0, 0, W, 420);
+  x.fillStyle = t.v.ink;
+  x.font = '46px Georgia, "Times New Roman", serif';
+  x.fillText("When I'm free", P, P + 46);
+  x.fillStyle = t.v['ink-2'];
+  x.font = '24px -apple-system, "Helvetica Neue", Arial, sans-serif';
+  x.fillText(AV_RANGES[range], P, P + 86);
+  let y = P + 132;
+  for (const r of rows) {
+    x.fillStyle = t.v.ink;
+    x.font = '600 26px -apple-system, "Helvetica Neue", Arial, sans-serif';
+    x.fillText(`${WD[parseDay(r.d.k).getDay()]}, ${MO[parseDay(r.d.k).getMonth()].slice(0, 3)} ${parseDay(r.d.k).getDate()}`, P, y + 26);
+    y += 44;
+    for (const line of r.lines) {
+      const open = line !== 'Booked up';
+      const w = x.measureText(line).width + 44;
+      x.fillStyle = open ? (dark ? 'rgba(62,207,142,.17)' : 'rgba(30,150,100,.14)') : (dark ? 'rgba(255,255,255,.05)' : 'rgba(20,30,50,.05)');
+      roundRect(x, P, y, Math.max(240, w), 42, 21); x.fill();
+      x.strokeStyle = open ? (dark ? 'rgba(62,207,142,.45)' : 'rgba(30,150,100,.35)') : t.v.line;
+      x.lineWidth = 1.5; roundRect(x, P, y, Math.max(240, w), 42, 21); x.stroke();
+      x.fillStyle = open ? t.v.ink : t.v['ink-3'];
+      x.font = '25px -apple-system, "Helvetica Neue", Arial, sans-serif';
+      x.fillText(line, P + 22, y + 29);
+      y += 52;
+    }
+    y += 22;
+  }
+  x.fillStyle = t.v['ink-3'];
+  x.font = '20px -apple-system, "Helvetica Neue", Arial, sans-serif';
+  x.fillText('Times are open windows, not commitments.', P, H - P + 18);
+  return cv;
+}
+function roundRect(x, l, t2, w, h, r) {
+  x.beginPath();
+  x.moveTo(l + r, t2); x.arcTo(l + w, t2, l + w, t2 + h, r); x.arcTo(l + w, t2 + h, l, t2 + h, r);
+  x.arcTo(l, t2 + h, l, t2, r); x.arcTo(l, t2, l + w, t2, r); x.closePath();
+}
+async function shareAvailability(btn) {
+  btn.disabled = true; btn.textContent = 'Making it…';
+  try {
+    const cv = avCanvas(S.avRange || 'weekend');
+    const blob = await new Promise((res) => cv.toBlob(res, 'image/png'));
+    const file = new File([blob], 'my-availability.png', { type: 'image/png' });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file] });
+      closeSheet();
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'my-availability.png'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      closeSheet(); toast('Image saved');
+    }
+  } catch (err) {
+    if (err?.name !== 'AbortError') toast(err.message || 'Could not make the image.', true);
+  }
+  btn.disabled = false; btn.textContent = 'Make the image';
+}
+
 // ---------- weekly check-in ----------
 // The week you're planning: on Sunday that's tomorrow's Monday, otherwise this Monday.
 const planWeek = () => dayKey(new Date().getDay() === 0 ? sow(addDays(new Date(), 1)) : sow(new Date()));
@@ -884,6 +1050,7 @@ async function refreshAll() {
   S.lastLoad = Date.now();
   try {
     S.data = await api('/api/data');
+    S.data.day_routines = S.data.day_routines || [];
     S.google = !!S.data.google?.connected;
     S.errors.boot = null;
   } catch (err) { S.errors.boot = err.message; render(); return; }
@@ -1027,12 +1194,18 @@ function lineupHTML(k) {
   const now = new Date(), isToday = k === todayKey();
   let h = '';
   if (all.length) h += `<div class="allday">${all.map((e) => `<button class="chip" style="--c:${catOf(e.colorId).c}" data-act="ev" data-id="${esc(e.id)}">${esc(e.title)}</button>`).join('')}</div>`;
-  if (!timed.length) return h + `<p class="empty-day">${all.length ? 'Nothing else scheduled.' : 'Nothing on the calendar.'} <button class="link-btn" data-act="add">Add something</button></p>`;
+
+  // Anchors and events share one sorted rail. Anchors are ours, events are Google's.
+  const items = anchorsOn(k).map((a) => ({ kind: 'anchor', a, at: +atTime(k, a.time) }))
+    .concat(timed.map((e) => ({ kind: 'event', e, at: +(leadOf(e)?.ready || e.start) })))
+    .sort((x, y) => x.at - y.at);
+  if (!items.length) return h + `<p class="empty-day">${all.length ? 'Nothing else scheduled.' : 'Nothing on the calendar.'} <button class="link-btn" data-act="add">Add something</button></p>`;
+
   let placed = !isToday;
-  for (const e of timed) {
-    const l = leadOf(e), c = catOf(e.colorId).c, past = e.end < now;
-    const edge = l ? l.ready : e.start;
-    if (!placed && edge > now) { h += nowHTML(now); placed = true; }
+  for (const it of items) {
+    if (!placed && it.at > +now) { h += nowHTML(now); placed = true; }
+    if (it.kind === 'anchor') { h += anchorRowHTML(k, it.a, now); continue; }
+    const e = it.e, l = leadOf(e), c = catOf(e.colorId).c, past = e.end < now;
     if (l && !past && dayKey(l.ready) === k) {
       const parts = [];
       if (l.prep) parts.push(`<b>Get ready</b>${e.meta?.prep_note ? `: ${esc(e.meta.prep_note)}` : `, ${fmtDur(l.prep)}`}`);
@@ -1044,6 +1217,16 @@ function lineupHTML(k) {
   if (!placed) h += nowHTML(now);
   return h;
 }
+function anchorRowHTML(k, a, now) {
+  const st = atTime(k, a.time), en = a.mins ? new Date(+st + a.mins * 6e4) : null;
+  const past = (en || st) < now && k <= todayKey();
+  const moved = !!overrideFor(k, a.id);
+  return `<div class="row anchor${past ? ' past' : ''}${a.id === 'wake' ? ' wake' : ''}" data-drag="anchor" data-id2="${esc(a.id)}" data-k="${k}" data-min="${st.getHours() * 60 + st.getMinutes()}" role="button" tabindex="0" data-act="anchor" data-id="${esc(a.id)}" data-day="${k}">
+    <span class="t">${fmtT(st)}${en ? `<small>${fmtT(en)}</small>` : ''}</span><span class="rail"></span>
+    <div class="body"><div class="title">${esc(a.label)}${moved ? '<em class="moved">moved</em>' : ''}</div>${a.id === 'wake' ? `<div class="sub">${a.mins} minutes to get up</div>` : ''}</div>
+  </div>`;
+}
+
 const nowHTML = (now) => `<div class="now" aria-label="Now"><span class="t">${fmtT(now)}</span><span class="line"></span></div>`;
 function evRow(e, c, past, now) {
   const live = !past && e.start <= now;
@@ -1052,7 +1235,7 @@ function evRow(e, c, past, now) {
   if (g && e.end < now) extra = eventLogged(e, g) ? `<div class="logged">Logged to ${esc(g.title)}</div>` : `<button class="log-btn" data-act="log-ev" data-id="${esc(e.id)}">Log to ${esc(g.title)}</button>`;
   const sub = live ? `Happening now, ends ${fmtT(e.end)}` : (e.location || '');
   const startsEarlier = dayKey(e.start) !== dayKey(e.end) && e.start < parseDay(dayKey(now));
-  return `<div class="row p${pri(e)}${past ? ' past' : ''}${live ? ' live' : ''}" style="--c:${c}" role="button" tabindex="0" data-act="ev" data-id="${esc(e.id)}">
+  return `<div class="row p${pri(e)}${past ? ' past' : ''}${live ? ' live' : ''}" style="--c:${c}" role="button" tabindex="0" data-act="ev" data-id="${esc(e.id)}" data-drag="event" data-id2="${esc(e.id)}" data-min="${e.start.getHours() * 60 + e.start.getMinutes()}">
     <span class="t">${startsEarlier ? 'cont.' : fmtT(e.start)}<small>${fmtT(e.end)}</small></span><span class="rail"></span>
     <div class="body"><div class="title">${esc(e.title)}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}${extra}</div>
   </div>`;
@@ -1108,7 +1291,7 @@ function viewSchedule() {
     const colors = [...new Set(eventsOn(k).sort((a, b) => pri(b) - pri(a)).map((e) => catOf(e.colorId).c))].slice(0, 4);
     return `<button class="wd${k === S.selDay ? ' on' : ''}${k === todayKey() ? ' today' : ''}" data-act="day-sel" data-k="${k}" aria-label="${fmtDay(d)}"><span>${WD[d.getDay()].slice(0, 3)}</span><b>${d.getDate()}</b><i>${colors.map((c) => `<em style="--c:${c}"></em>`).join('')}</i></button>`;
   }).join('');
-  const nav = `${isThisWeek ? '' : '<button class="link-btn" data-act="week-now" style="margin-right:6px">This week</button>'}<button class="icon-btn glass" data-act="week-prev" aria-label="Previous week">${ICON.prev}</button><button class="icon-btn glass" data-act="week-next" aria-label="Next week">${ICON.next}</button>`;
+  const nav = `<button class="icon-btn glass" data-act="av-open" aria-label="Share availability">${ICON.share}</button>${isThisWeek ? '' : '<button class="link-btn" data-act="week-now" style="margin-right:6px">This week</button>'}<button class="icon-btn glass" data-act="week-prev" aria-label="Previous week">${ICON.prev}</button><button class="icon-btn glass" data-act="week-next" aria-label="Next week">${ICON.next}</button>`;
   let body;
   if (!S.google) body = `<div class="empty-card glass"><p>Connect Google Calendar to see your schedule.</p><button class="btn" data-act="connect">Connect Google Calendar</button></div>`;
   else if (!S.loadedWeeks.has(dayKey(ws)) && !S.eventsReady) body = '<p class="loading">Loading…</p>';
@@ -1200,6 +1383,7 @@ function openAdd() {
     <button class="btn ghost" data-act="ev-custom">Custom event</button>` : `<p class="muted" style="margin-bottom:12px">Connect Google Calendar to add events.</p>`}
     <button class="btn ghost" data-act="rem-new">Reminder</button>
     <button class="btn ghost" data-act="uns-new">Something to schedule</button>
+    <button class="btn ghost" data-act="av-open">Share my availability</button>
     <button class="btn ghost" data-act="goal-new">Goal</button>`);
 }
 
@@ -1368,6 +1552,19 @@ async function deleteEvent(id, btn) {
     await api('/api/calendar', { method: 'POST', body: { action: 'delete', id } });
     S.events.delete(id); closeSheet(); render(); toast('Deleted');
   } catch (err) { btn.disabled = false; toast(err.message, true); }
+}
+
+function openAnchorSheet(k, id) {
+  const a = anchorsOn(k).find((x) => x.id === id);
+  if (!a) return;
+  const moved = overrideFor(k, id);
+  openSheet(`<div class="sheet-h"><h2>${esc(a.label)}</h2></div>
+    <p class="lede">${esc(relDay(k))}. This lives in Launch only, never on your Google Calendar.</p>
+    <label class="field"><span>Time on this day</span><input class="inp" type="time" id="an-time" value="${esc(a.time)}"></label>
+    <button class="btn" data-act="anchor-save" data-day="${k}" data-id="${esc(id)}">Save for ${esc(relDay(k).toLowerCase())}</button>
+    ${moved ? `<button class="btn ghost" data-act="anchor-reset" data-day="${k}" data-id="${esc(id)}">Back to my usual time</button>` : ''}
+    <button class="btn ghost" data-act="anchor-hide" data-day="${k}" data-id="${esc(id)}">Skip it this day</button>
+    <button class="btn ghost" data-act="settings">Change my usual routine</button>`);
 }
 
 function openSlotSheet() {
@@ -1540,7 +1737,8 @@ function openSettings() {
       <div class="theme-grid">${Object.entries(THEMES).map(([id, t]) => `<button class="th${id === S.theme ? ' on' : ''}" data-act="theme-set" data-v="${id}"><span class="sw2" style="background:linear-gradient(135deg,${t.v.night},${t.v['night-2']})"><i style="background:${t.v.dawn}"></i></span>${t.name}</button>`).join('')}</div>
     </section>
     <section class="set"><h3>Routines</h3><p class="muted">Invisible anchors. They never touch your calendar, but the AI plans around them.</p>
-      <div class="two"><label class="field"><span>Wake up</span><input class="inp" type="time" id="rt-wake" value="${esc(r.wake || '')}"></label><label class="field"><span>Home base</span><input class="inp" id="rt-home" value="${esc(r.home_address || '')}" placeholder="Fenton, MI"></label></div>
+      <div class="two"><label class="field"><span>Wake up</span><input class="inp" type="time" id="rt-wake" value="${esc(r.wake || '')}"></label><label class="field"><span>Day winds down</span><input class="inp" type="time" id="rt-end" value="${esc(r.day_end || '22:00')}"></label></div>
+      <div class="two"><label class="field"><span>Good morning block (min)</span><input class="inp" type="number" inputmode="numeric" id="rt-morning" value="${esc(String(r.morning_min ?? 10))}"></label><label class="field"><span>Home base</span><input class="inp" id="rt-home" value="${esc(r.home_address || '')}" placeholder="Fenton, MI"></label></div>
       <div id="rt-list">${(r.anchors || []).map((a, i) => anchorRow(a, i)).join('')}</div>
       <button class="btn ghost" data-act="rt-add">Add an anchor</button>
       <button class="btn" data-act="rt-save" style="margin-top:10px">Save routines</button>
@@ -1568,7 +1766,7 @@ function readAnchors() {
   })).filter((a) => a.label && a.time);
 }
 async function saveRoutines(btn) {
-  const value = { wake: val('rt-wake'), home_address: val('rt-home'), anchors: readAnchors() };
+  const value = { wake: val('rt-wake'), home_address: val('rt-home'), day_end: val('rt-end') || '22:00', morning_min: Math.max(0, Math.min(120, num('rt-morning', 10))), anchors: readAnchors() };
   btn.disabled = true;
   try { const saved = await saveRow('settings', { id: 'routines', value }); upsertLocal('settings', saved); S.briefing = null; closeSheet(); render(); toast('Routines saved'); ensureBriefing(true); }
   catch (err) { btn.disabled = false; toast(err.message, true); }
@@ -1646,6 +1844,7 @@ const A = {
     el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el));
     if (el.parentElement.id === 'gf-type') setGoalType(el.dataset.v);
     if (el.parentElement.id === 'gf-mode') setPaceMode(el.dataset.v);
+    if (el.parentElement.id === 'av-range') openAvSheet(el.dataset.v);
     if (el.parentElement.id === 'gf-cat' && draft?.newGoal && !goalTouched()) {
       // Picking an area on a blank form sets the sensible default for it.
       const d = { money: ['number', '$'], study: ['streak', ''], fitness: ['streak', ''], habits: ['streak', ''], work: ['milestone', ''], other: ['number', ''] }[el.dataset.v] || ['number', ''];
@@ -1671,10 +1870,21 @@ const A = {
     removeLocal('reminders', id); closeSheet(); render();
     try { await delRow('reminders', id); toast('Deleted'); } catch (err) { upsertLocal('reminders', r); render(); toast(err.message, true); }
   },
+  anchor: (el) => openAnchorSheet(el.dataset.day, el.dataset.id),
+  'anchor-reset': (el) => { resetAnchor(el.dataset.day, el.dataset.id); closeSheet(); },
+  'anchor-save': (el) => { const t = val('an-time'); if (t) { moveAnchor(el.dataset.day, el.dataset.id, t); closeSheet(); } },
+  'anchor-hide': async (el) => {
+    const k = el.dataset.day, id = el.dataset.id;
+    const row = { id: `${k}:${id}`, day: k, anchor_id: id, time: null, hidden: true };
+    upsertLocal('day_routines', row); closeSheet(); render();
+    try { await saveRow('day_routines', row); } catch (err) { removeLocal('day_routines', row.id); render(); toast(err.message, true); }
+  },
   'slot-find': (el) => findSlot(el.dataset.id),
   'slot-accept': (el) => acceptSlot(el),
   'slot-again': () => findSlot(S.slot?.id),
   'uns-new': () => { openRemForm(null); const c = $('#rf-needs'); if (c) c.checked = true; },
+  'av-open': () => openAvSheet(),
+  'av-share': (el) => shareAvailability(el),
   'weekly-open': openWeeklySheet,
   'weekly-run': (el) => { if (el.closest('#sheet')) S.sheetIs = 'weekly'; ensureCheckin(true); },
   'weekly-hide': () => { localStorage.setItem('launch.checkin.hid', planWeek()); render(); },
@@ -1749,7 +1959,89 @@ function signOut() {
   render();
 }
 
+// ---------- drag to move: long-press, slide, release ----------
+const DRAG = { el: null, timer: null, startY: 0, y0: 0, baseMin: 0, mins: 0, live: false, moved: false, endedAt: 0, kind: null, id: null, k: null };
+const PX_PER_5 = 7; // finger travel for a 5 minute nudge
+
+function dragChip(text) {
+  let c = $('#drag-chip');
+  if (!c) {
+    c = document.createElement('div'); c.id = 'drag-chip'; c.className = 'drag-chip';
+    const h = document.createElement('div'); h.id = 'drag-hint'; h.className = 'drag-hint'; h.textContent = 'Slide to move, let go to save';
+    document.body.append(c, h);
+  }
+  c.textContent = text;
+}
+function chipTo(y) { const c = $('#drag-chip'); if (c) c.style.top = y + 'px'; }
+function endChip() { $('#drag-chip')?.remove(); $('#drag-hint')?.remove(); }
+
+function dragCancel() {
+  clearTimeout(DRAG.timer);
+  DRAG.el?.classList.remove('dragging', 'press');
+  endChip();
+  DRAG.el = null; DRAG.live = false;
+}
+function dragStart(el, y) {
+  DRAG.el = el; DRAG.startY = y; DRAG.y0 = y; DRAG.moved = false; DRAG.live = false;
+  DRAG.kind = el.dataset.drag; DRAG.id = el.dataset.id2; DRAG.k = el.dataset.k || S.selDay;
+  DRAG.baseMin = +el.dataset.min || 0; DRAG.mins = DRAG.baseMin;
+  el.classList.add('press');
+  DRAG.timer = setTimeout(() => {
+    DRAG.live = true;
+    el.classList.remove('press');
+    el.classList.add('dragging');
+    dragChip(fmtT(minToDate(DRAG.k, DRAG.baseMin)));
+    chipTo(y);
+  }, 320);
+}
+const minToDate = (k, m) => atTime(k, `${pad(Math.floor(((m % 1440) + 1440) % 1440 / 60))}:${pad(((m % 60) + 60) % 60)}`);
+function dragMove(y) {
+  if (!DRAG.el) return;
+  if (!DRAG.live) { if (Math.abs(y - DRAG.startY) > 9) dragCancel(); return; }
+  DRAG.moved = true;
+  const step = Math.round((y - DRAG.y0) / PX_PER_5) * 5;
+  DRAG.mins = Math.max(0, Math.min(1435, DRAG.baseMin + step));
+  dragChip(fmtT(minToDate(DRAG.k, DRAG.mins)));
+  chipTo(y);
+}
+async function dragEnd() {
+  if (!DRAG.el || !DRAG.live) return dragCancel();
+  const { kind, id, k, mins, baseMin } = DRAG;
+  if (DRAG.moved) DRAG.endedAt = Date.now();
+  dragCancel();
+  if (mins === baseMin) return;
+  const time = `${pad(Math.floor(mins / 60))}:${pad(mins % 60)}`;
+  if (kind === 'anchor') { await moveAnchor(k, id, time); return toast(`Moved to ${fmtT(minToDate(k, mins))}`); }
+  const e = S.events.get(id);
+  if (!e) return;
+  const shift = (mins - baseMin) * 6e4;
+  const ns = new Date(+e.start + shift), ne = new Date(+e.end + shift);
+  const before = { start: e.start, end: e.end };
+  e.start = ns; e.end = ne; render();
+  try {
+    const j = await api('/api/calendar', { method: 'POST', body: { action: 'update', id, patch: { start: localIso(ns), end: localIso(ne), allDay: false } } });
+    S.events.set(id, normEv(j.event));
+    S.briefing = null; render();
+    toast(`Moved to ${fmtT(ns)}`);
+  } catch (err) { Object.assign(e, before); render(); toast(err.message, true); }
+}
+
+document.addEventListener('pointerdown', (ev) => {
+  if (ev.button > 0) return;
+  const el = ev.target.closest('[data-drag]');
+  if (!el || ev.target.closest('button')) return;
+  dragStart(el, ev.clientY);
+}, { passive: true });
+document.addEventListener('pointermove', (ev) => dragMove(ev.clientY), { passive: true });
+document.addEventListener('pointerup', dragEnd);
+document.addEventListener('pointercancel', dragCancel);
+document.addEventListener('scroll', () => { if (!DRAG.live) dragCancel(); }, true);
+// iOS scrolls the page unless we say otherwise mid-drag
+document.addEventListener('touchmove', (ev) => { if (DRAG.live) ev.preventDefault(); }, { passive: false });
+
 document.addEventListener('click', (ev) => {
+  // Swallow only the ghost click that follows a drag, never a real tap later on.
+  if (DRAG.endedAt && Date.now() - DRAG.endedAt < 400) { DRAG.endedAt = 0; ev.preventDefault(); ev.stopPropagation(); return; }
   const el = ev.target.closest('[data-act]');
   if (!el || el.disabled) return;
   if (el.tagName === 'INPUT' && el.type === 'checkbox') { A[el.dataset.act]?.(el, ev); return; }
