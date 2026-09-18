@@ -30,7 +30,9 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{overflow-x:clip}
 html{-webkit-text-size-adjust:100%}
-body{font-family:var(--sans);background:var(--night);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased;line-height:1.4}
+body{font-family:var(--sans);background:var(--night);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased;line-height:1.4;touch-action:manipulation}
+/* iOS zooms the whole page whenever a focused field is under 16px. Never go under. */
+input,select,textarea{font-size:16px}
 body{transition:background .6s,color .6s}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
   background:radial-gradient(130% 55% at 50% -12%,var(--sky) 0%,transparent 62%),radial-gradient(70% 45% at 105% 0%,var(--sky2),transparent 70%);transition:background 1.2s}
@@ -179,7 +181,7 @@ input,select,textarea{font:inherit;color:var(--ink)}
 
 /* reminders */
 .qadd{display:flex;gap:6px;padding:6px 6px 6px 12px;border-radius:16px;align-items:center}
-.qadd input{flex:1;min-width:0;background:transparent;border:0;padding:10px 2px;font-size:16px;outline:none}
+.qadd input{flex:1;min-width:0;background:transparent;border:0;padding:10px 2px;outline:none}
 .qadd input::placeholder{color:var(--ink-3)}
 .qa-go{padding:10px 16px;border-radius:12px;background:var(--dawn);color:var(--dawn-ink);font-weight:700}
 .qa-when{display:flex;gap:6px;margin:10px 0 4px;flex-wrap:wrap}
@@ -306,8 +308,8 @@ details.more[open] summary{margin-bottom:4px}
 .rt2 .rt{margin-bottom:6px}
 .rt-sub{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-right:0}
 .rt-sub label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-3)}
-.rt-sub .inp{min-height:38px;padding:7px 10px;font-size:14px}
-.rt .inp{min-height:42px;padding:9px 10px;font-size:15px}
+.rt-sub .inp{min-height:40px;padding:8px 10px}
+.rt .inp{min-height:44px;padding:10px 11px}
 
 /* month view */
 .month{border-radius:22px;padding:14px 12px 8px;animation:unfold .42s cubic-bezier(.2,.9,.2,1) both;overflow:hidden}
@@ -323,8 +325,14 @@ details.more[open] summary{margin-bottom:4px}
 .md.today b{color:var(--dawn)}
 .md.on{background:var(--hi)}
 .mclose{display:block;width:100%;padding:12px 0 8px;font-size:13px;color:var(--ink-3);font-weight:600}
-.week{position:relative;transform:scaleY(calc(1 + var(--pull,0) * .04));transition:transform .18s}
-.pull-hint{position:absolute;left:0;right:0;bottom:-16px;text-align:center;font-size:10px;color:var(--ink-3);opacity:calc(.35 + var(--pull,0));pointer-events:none}
+.weekwrap{transform:scaleY(calc(1 + var(--pull,0) * .05));transform-origin:top;transition:transform .2s}
+.week-handle{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:9px 0 4px;
+  color:var(--ink-3);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.week-handle svg{width:15px;height:15px;transition:transform .3s;transform:translateY(calc(var(--pull,0) * 3px))}
+.month{transform:scaleY(calc(1 - var(--pull,0) * .04));transform-origin:top}
+.mclose{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:12px 0 6px;font-size:11px;
+  color:var(--ink-3);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.mclose svg{width:15px;height:15px;transform:rotate(180deg)}
 .sched-grid{margin-top:26px}
 
 /* today: what's left */
@@ -395,9 +403,10 @@ details.more[open] summary{margin-bottom:4px}
 .drag-hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 96px);transform:translateX(-50%);z-index:70;font-size:13px;color:var(--ink-2);background:var(--sheet);border:1px solid var(--line);padding:8px 14px;border-radius:999px;pointer-events:none;white-space:nowrap}
 
 /* availability */
-.av-day{margin-bottom:16px}
-.av-day h4{font-size:15px;font-weight:650;margin-bottom:6px}
-.av-win{display:inline-block;padding:7px 12px;border-radius:999px;font-size:14px;background:color-mix(in srgb,var(--ok) 15%,transparent);border:1px solid color-mix(in srgb,var(--ok) 38%,transparent);margin:0 6px 6px 0}
+.av-day{margin-bottom:18px}
+.av-day h4{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--ink-3);margin-bottom:8px}
+.av-line{display:flex;align-items:center;gap:11px;font-size:17px;padding:4px 0}
+.av-line i{width:7px;height:7px;border-radius:50%;background:var(--dawn);flex:none}
 .av-none{font-size:14px;color:var(--ink-3)}
 .av-prev{border-radius:18px;padding:16px;max-height:320px;overflow:auto;margin-bottom:16px}
 
@@ -919,15 +928,25 @@ function avDays(range) {
   return today.getDay() === 6 ? [dayKey(today), dayKey(addDays(today, 1))] : today.getDay() === 0 ? [dayKey(today)] : [dayKey(sat), dayKey(addDays(sat, 1))];
 }
 // Free means actually free: after the drive home, before the next get-ready.
-function availability(range, minMin = 45) {
-  return avDays(range).map((k) => ({
-    k,
-    windows: freeGaps(k).filter((g) => g.e - g.s >= minMin * 6e4).map((g) => ({ s: g.s, e: g.e, label: `${fmtT(g.s)} – ${fmtT(g.e)}` })),
-  }));
+function availability(range, minMin = 60) {
+  const from = S.avFrom || '08:00';
+  return avDays(range).map((k) => {
+    const floor = +atTime(k, from);
+    return {
+      k,
+      windows: freeGaps(k)
+        .map((g) => ({ s: new Date(Math.max(+g.s, floor)), e: g.e }))
+        .filter((g) => g.e - g.s >= minMin * 6e4)
+        .map((g) => ({ s: g.s, e: g.e, label: `${fmtT(g.s)} – ${fmtT(g.e)}` })),
+    };
+  });
 }
 function avPreview(days) {
-  return days.map((d) => `<div class="av-day"><h4>${esc(relDay(d.k))}${d.k === todayKey() ? '' : `, ${esc(fmtDay(parseDay(d.k)))}`}</h4>${
-    d.windows.length ? d.windows.map((w) => `<span class="av-win">${esc(w.label)}</span>`).join('') : '<span class="av-none">Booked up</span>'}</div>`).join('');
+  return days.filter((d) => d.windows.length).map((d) => {
+    const dt = parseDay(d.k);
+    return `<div class="av-day"><h4>${WD[dt.getDay()].slice(0, 3).toUpperCase()} ${MO[dt.getMonth()].slice(0, 3).toUpperCase()} ${dt.getDate()}</h4>${
+      d.windows.map((w) => `<div class="av-line"><i></i>${esc(w.label)}</div>`).join('')}</div>`;
+  }).join('') || '<span class="av-none">Nothing open in this stretch.</span>';
 }
 function openAvSheet(range = S.avRange || 'weekend') {
   S.avRange = range;
@@ -935,85 +954,81 @@ function openAvSheet(range = S.avRange || 'weekend') {
   const days = availability(range);
   const free = days.reduce((n, d) => n + d.windows.length, 0);
   openSheet(`<div class="sheet-h"><h2>Share availability</h2></div>
-    <p class="lede">An image you can text. It shows when you're free, never what you're doing.</p>
+    <p class="lede">Pick a stretch, then send the image.</p>
     ${segHTML('av-range', Object.entries(AV_RANGES), range)}
-    <div class="av-prev glass" style="margin-top:14px">${free ? avPreview(days) : '<span class="av-none">No open windows in this stretch.</span>'}</div>
-    <button class="btn" data-act="av-share" ${free ? '' : 'disabled'}>Make the image</button>`);
+    <div class="av-prev glass" style="margin-top:14px">${free ? avPreview(days) : '<span class="av-none">Nothing open in this stretch.</span>'}</div>
+    <button class="btn" data-act="av-share" ${free ? '' : 'disabled'}>Send it</button>`);
 }
 
-// Draws the card at 2x so it stays sharp in Messages.
+// Meant to read like something he jotted down, not a slide.
+const AV_TITLE = { weekend: 'Free this weekend', week: 'Free this week', next7: 'Free the next 7 days' };
 function avCanvas(range) {
-  const days = availability(range), t = THEMES[S.theme] || THEMES.midnight;
-  const W = 900, P = 56, S2 = 2;
-  const rows = days.map((d) => ({ d, lines: d.windows.length ? d.windows.map((w) => w.label) : ['Booked up'] }));
-  let H = P + 132;
-  for (const r of rows) H += 44 + r.lines.length * 52 + 22;
-  H += P - 10;
+  const days = availability(range).filter((d) => d.windows.length);
+  const t = THEMES[S.theme] || THEMES.midnight;
+  const P = 54, S2 = 2;
+  let H = P + 62;
+  for (const d of days) H += 40 + d.windows.length * 46 + 16;
+  H += P - 36;
   const cv = document.createElement('canvas');
+  const m = cv.getContext('2d');
+  // Measure first so the image hugs its content in Messages.
+  m.font = '700 34px -apple-system, "Helvetica Neue", Arial, sans-serif';
+  let wide = m.measureText(AV_TITLE[range]).width;
+  m.font = '28px -apple-system, "Helvetica Neue", Arial, sans-serif';
+  for (const d of days) for (const win of d.windows) wide = Math.max(wide, m.measureText(win.label).width + 22);
+  const W = Math.round(Math.max(440, Math.min(760, wide + P * 2)));
   cv.width = W * S2; cv.height = H * S2;
   const x = cv.getContext('2d');
   x.scale(S2, S2);
-  const dark = t.v.night !== '#f4f6fa';
   x.fillStyle = t.v.night; x.fillRect(0, 0, W, H);
-  const glow = x.createRadialGradient(W / 2, -60, 10, W / 2, -60, 620);
+  const glow = x.createRadialGradient(W * 0.2, -40, 10, W * 0.2, -40, 520);
   glow.addColorStop(0, t.skies[1][0]); glow.addColorStop(1, 'rgba(0,0,0,0)');
-  x.fillStyle = glow; x.fillRect(0, 0, W, 420);
+  x.fillStyle = glow; x.fillRect(0, 0, W, 360);
+
   x.fillStyle = t.v.ink;
-  x.font = '46px Georgia, "Times New Roman", serif';
-  x.fillText("When I'm free", P, P + 46);
-  x.fillStyle = t.v['ink-2'];
-  x.font = '24px -apple-system, "Helvetica Neue", Arial, sans-serif';
-  x.fillText(AV_RANGES[range], P, P + 86);
-  let y = P + 132;
-  for (const r of rows) {
-    x.fillStyle = t.v.ink;
-    x.font = '600 26px -apple-system, "Helvetica Neue", Arial, sans-serif';
-    x.fillText(`${WD[parseDay(r.d.k).getDay()]}, ${MO[parseDay(r.d.k).getMonth()].slice(0, 3)} ${parseDay(r.d.k).getDate()}`, P, y + 26);
-    y += 44;
-    for (const line of r.lines) {
-      const open = line !== 'Booked up';
-      const w = x.measureText(line).width + 44;
-      x.fillStyle = open ? (dark ? 'rgba(62,207,142,.17)' : 'rgba(30,150,100,.14)') : (dark ? 'rgba(255,255,255,.05)' : 'rgba(20,30,50,.05)');
-      roundRect(x, P, y, Math.max(240, w), 42, 21); x.fill();
-      x.strokeStyle = open ? (dark ? 'rgba(62,207,142,.45)' : 'rgba(30,150,100,.35)') : t.v.line;
-      x.lineWidth = 1.5; roundRect(x, P, y, Math.max(240, w), 42, 21); x.stroke();
-      x.fillStyle = open ? t.v.ink : t.v['ink-3'];
-      x.font = '25px -apple-system, "Helvetica Neue", Arial, sans-serif';
-      x.fillText(line, P + 22, y + 29);
-      y += 52;
+  x.font = '700 34px -apple-system, "Helvetica Neue", Arial, sans-serif';
+  x.fillText(AV_TITLE[range], P, P + 30);
+
+  let y = P + 78;
+  for (const d of days) {
+    const dt = parseDay(d.k);
+    x.fillStyle = t.v['ink-3'];
+    x.font = '700 16px -apple-system, "Helvetica Neue", Arial, sans-serif';
+    x.fillText(`${WD[dt.getDay()].slice(0, 3).toUpperCase()}  ${MO[dt.getMonth()].slice(0, 3).toUpperCase()} ${dt.getDate()}`, P, y);
+    y += 34;
+    for (const win of d.windows) {
+      x.fillStyle = t.v.dawn;
+      x.beginPath(); x.arc(P + 5, y - 9, 4.5, 0, Math.PI * 2); x.fill();
+      x.fillStyle = t.v.ink;
+      x.font = '28px -apple-system, "Helvetica Neue", Arial, sans-serif';
+      x.fillText(win.label, P + 22, y);
+      y += 46;
     }
-    y += 22;
+    y += 16;
   }
-  x.fillStyle = t.v['ink-3'];
-  x.font = '20px -apple-system, "Helvetica Neue", Arial, sans-serif';
-  x.fillText('Times are open windows, not commitments.', P, H - P + 18);
   return cv;
 }
-function roundRect(x, l, t2, w, h, r) {
-  x.beginPath();
-  x.moveTo(l + r, t2); x.arcTo(l + w, t2, l + w, t2 + h, r); x.arcTo(l + w, t2 + h, l, t2 + h, r);
-  x.arcTo(l, t2 + h, l, t2, r); x.arcTo(l, t2, l + w, t2, r); x.closePath();
-}
+
 async function shareAvailability(btn) {
-  btn.disabled = true; btn.textContent = 'Making it…';
+  btn.disabled = true; btn.textContent = 'One sec…';
   try {
     const cv = avCanvas(S.avRange || 'weekend');
     const blob = await new Promise((res) => cv.toBlob(res, 'image/png'));
-    const file = new File([blob], 'my-availability.png', { type: 'image/png' });
+    const file = new File([blob], 'free-times.png', { type: 'image/png' });
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({ files: [file] });
       closeSheet();
     } else {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'my-availability.png'; a.click();
+      a.href = url; a.download = 'free-times.png'; a.click();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
       closeSheet(); toast('Image saved');
     }
   } catch (err) {
     if (err?.name !== 'AbortError') toast(err.message || 'Could not make the image.', true);
   }
-  btn.disabled = false; btn.textContent = 'Make the image';
+  btn.disabled = false; btn.textContent = 'Send it';
 }
 
 // ---------- weekly check-in ----------
@@ -1447,7 +1462,8 @@ function viewSchedule() {
     return `<button class="wd${k === S.selDay ? ' on' : ''}${k === todayKey() ? ' today' : ''}" data-act="day-sel" data-k="${k}" aria-label="${fmtDay(d)}"><span>${WD[d.getDay()].slice(0, 3)}</span><b>${d.getDate()}</b><i>${colors.map((c) => `<em style="--c:${c}"></em>`).join('')}</i></button>`;
   }).join('');
   const nav = `<button class="icon-btn glass" data-act="av-open" aria-label="Share availability">${ICON.share}</button>${isThisWeek || S.month ? '' : '<button class="link-btn" data-act="week-now" style="margin-right:6px">This week</button>'}<button class="icon-btn glass" data-act="week-prev" aria-label="Previous">${ICON.prev}</button><button class="icon-btn glass" data-act="week-next" aria-label="Next">${ICON.next}</button>`;
-  const top = S.month ? monthHTML(anchor) : `<div class="week glass">${strip}<span class="pull-hint">pull down for the month</span></div>`;
+  const top = S.month ? monthHTML(anchor)
+    : `<div class="weekwrap"><div class="week glass">${strip}</div><button class="week-handle" data-act="month-open">${ICON.down}<span>Month</span></button></div>`;
   let body;
   if (!S.google) body = `<div class="empty-card glass"><p>Connect Google Calendar to see your schedule.</p><button class="btn" data-act="connect">Connect Google Calendar</button></div>`;
   else if (!S.loadedWeeks.has(dayKey(ws)) && !S.eventsReady) body = '<p class="loading">Loading…</p>';
@@ -2162,6 +2178,7 @@ const A = {
   'week-prev': () => stepSchedule(-1),
   'week-next': () => stepSchedule(1),
   'week-now': () => { S.weekStart = sow(new Date()); S.selDay = todayKey(); ensureWeek(S.weekStart); render(); },
+  'month-open': () => { S.month = true; ensureMonth(); render(); },
   'month-close': () => { S.month = false; render(); },
   'show-past': () => { S.showPast = true; render(); },
   'hide-past': () => { S.showPast = false; render(); },
@@ -2294,27 +2311,29 @@ function signOut() {
 }
 
 // ---------- pull the week strip down into a month ----------
-const MON = { y0: 0, dy: 0, live: false };
+const MON = { y0: 0, x0: 0, dy: 0, live: false, pulling: false };
 function monthDown(ev) {
-  if (ev.target.closest('button') && !S.month) return; // let day taps through
-  MON.y0 = ev.clientY; MON.dy = 0; MON.live = true;
+  MON.y0 = ev.clientY; MON.x0 = ev.clientX; MON.dy = 0; MON.live = true; MON.pulling = false;
 }
 function monthMove(ev) {
   if (!MON.live) return;
   MON.dy = ev.clientY - MON.y0;
-  if (Math.abs(MON.dy) > 14) {
-    const strip = $('.week');
-    if (strip) strip.style.setProperty('--pull', Math.max(0, Math.min(1, Math.abs(MON.dy) / 90)));
-  }
+  // Sideways means they're not pulling; a small move means it's still a tap.
+  if (!MON.pulling && Math.abs(MON.dy) > 12 && Math.abs(MON.dy) > Math.abs(ev.clientX - MON.x0)) MON.pulling = true;
+  if (!MON.pulling) return;
+  const el = $('.weekwrap') || $('.month');
+  if (el) el.style.setProperty('--pull', Math.max(0, Math.min(1, Math.abs(MON.dy) / 80)));
 }
 function monthUp(cancel) {
   if (!MON.live) return;
-  MON.live = false;
-  const strip = $('.week');
-  if (strip) strip.style.removeProperty('--pull');
-  if (cancel) return;
-  if (!S.month && MON.dy > 45) { S.month = true; ensureMonth(); render(); }
-  else if (S.month && MON.dy < -45) { S.month = false; render(); }
+  const pulled = MON.pulling, dy = MON.dy;
+  MON.live = false; MON.pulling = false;
+  const el = $('.weekwrap') || $('.month');
+  if (el) el.style.removeProperty('--pull');
+  if (cancel || !pulled) return;
+  MON.endedAt = Date.now();
+  if (!S.month && dy > 36) { S.month = true; ensureMonth(); render(); }
+  else if (S.month && dy < -36) { S.month = false; render(); }
 }
 function monthHTML(anchor) {
   const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
@@ -2331,7 +2350,7 @@ function monthHTML(anchor) {
   return `<div class="month glass">
     <div class="mhead">${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((x) => `<span>${x}</span>`).join('')}</div>
     <div class="mgrid">${cells.join('')}</div>
-    <button class="mclose" data-act="month-close">Back to the week</button></div>`;
+    <button class="mclose" data-act="month-close">${ICON.down}<span>Week</span></button></div>`;
 }
 
 // ---------- pull a sheet down to dismiss ----------
@@ -2434,8 +2453,7 @@ async function dragEnd() {
 document.addEventListener('pointerdown', (ev) => {
   if (ev.button > 0) return;
   if (ev.target.closest('#sheet')) { sheetDown(ev); return; }
-  const strip = ev.target.closest('.week');
-  if (strip) { monthDown(ev); return; }
+  if (ev.target.closest('.weekwrap') || ev.target.closest('.month')) { monthDown(ev); return; }
   const el = ev.target.closest('[data-drag]');
   if (!el || ev.target.closest('button')) return;
   dragStart(el, ev.clientY);
@@ -2450,6 +2468,10 @@ document.addEventListener('touchmove', (ev) => { if (DRAG.live || (SH.live && SH
 document.addEventListener('click', (ev) => {
   // Swallow only the ghost click that follows a drag, never a real tap later on.
   if (DRAG.endedAt && Date.now() - DRAG.endedAt < 400) { DRAG.endedAt = 0; ev.preventDefault(); ev.stopPropagation(); return; }
+  // A pull shouldn't also select the day under your thumb, but it must not eat a real button tap.
+  if (MON.endedAt && Date.now() - MON.endedAt < 350 && ev.target.closest('[data-act="day-sel"]')) {
+    MON.endedAt = 0; ev.preventDefault(); ev.stopPropagation(); return;
+  }
   const el = ev.target.closest('[data-act]');
   if (!el || el.disabled) return;
   if (el.tagName === 'INPUT' && el.type === 'checkbox') { A[el.dataset.act]?.(el, ev); return; }
