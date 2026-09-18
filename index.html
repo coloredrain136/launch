@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0d1424">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -291,19 +291,60 @@ details.more[open] summary{margin-bottom:4px}
 .ck .x{color:var(--ink-3);font-size:20px;line-height:1;padding:2px 6px}
 .ck-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:18px 0 2px}
 .ck-head h3{font-size:16px;font-weight:650}
-.theme-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.theme-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px}
 .th{padding:12px 10px;border-radius:16px;border:1px solid var(--line);display:grid;gap:8px;justify-items:center;font-size:12px;color:var(--ink-2)}
 .th .sw2{width:100%;height:34px;border-radius:10px;position:relative;overflow:hidden}
 .th .sw2 i{position:absolute;right:7px;top:7px;width:14px;height:14px;border-radius:50%}
 .th.on{border-color:var(--dawn);color:var(--ink)}
-.rt{display:grid;grid-template-columns:minmax(0,1fr) 92px 104px 34px;gap:8px;align-items:center;margin-bottom:8px}
-.rt .x{color:var(--ink-3);font-size:20px;padding:6px}
+.rt{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:8px 6px;align-items:center;margin-bottom:8px}
+.rt [data-f="time"]{grid-column:1}
+.rt [data-f="days"]{grid-column:1}
+@media(min-width:520px){.rt{grid-template-columns:minmax(0,1fr) 108px 120px 34px}
+  .rt [data-f="time"],.rt [data-f="days"]{grid-column:auto}}
+.rt .x{color:var(--ink-3);font-size:20px;padding:6px;grid-row:1;grid-column:-1}
 .rt2{padding:10px 0 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
 .rt2 .rt{margin-bottom:6px}
-.rt-sub{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-right:34px}
+.rt-sub{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-right:0}
 .rt-sub label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-3)}
 .rt-sub .inp{min-height:38px;padding:7px 10px;font-size:14px}
 .rt .inp{min-height:42px;padding:9px 10px;font-size:15px}
+
+/* month view */
+.month{border-radius:22px;padding:14px 12px 8px;animation:unfold .42s cubic-bezier(.2,.9,.2,1) both;overflow:hidden}
+@keyframes unfold{from{opacity:0;transform:scaleY(.82);transform-origin:top}to{opacity:1;transform:none}}
+.mhead{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px}
+.mhead span{text-align:center;font-size:11px;color:var(--ink-3);font-weight:600}
+.mgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.md{display:grid;justify-items:center;align-content:center;gap:4px;padding:9px 0 8px;border-radius:12px;min-height:46px}
+.md b{font-size:15px;font-weight:600}
+.md i{display:flex;gap:3px;height:5px}
+.md i em{width:4px;height:4px;border-radius:50%;background:var(--c)}
+.md.off{opacity:.3}
+.md.today b{color:var(--dawn)}
+.md.on{background:var(--hi)}
+.mclose{display:block;width:100%;padding:12px 0 8px;font-size:13px;color:var(--ink-3);font-weight:600}
+.week{position:relative;transform:scaleY(calc(1 + var(--pull,0) * .04));transition:transform .18s}
+.pull-hint{position:absolute;left:0;right:0;bottom:-16px;text-align:center;font-size:10px;color:var(--ink-3);opacity:calc(.35 + var(--pull,0));pointer-events:none}
+.sched-grid{margin-top:26px}
+
+/* today: what's left */
+.rest-h{font-size:18px;font-weight:650;margin:2px 0 10px}
+.earlier{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:12px 16px;border-radius:14px;
+  background:var(--field);border:1px solid var(--line);color:var(--ink-3);font-size:14px;font-weight:600;margin-bottom:16px}
+.earlier svg{width:17px;height:17px;transition:transform .3s}
+.earlier.open svg{transform:rotate(180deg)}
+.wrapped{padding:24px 20px;border-radius:20px;display:grid;gap:4px}
+.wrapped b{font-family:var(--serif);font-weight:400;font-size:26px}
+.wrapped span{color:var(--ink-2);font-size:15px}
+
+/* sheet chrome */
+.grab{display:block;width:44px;height:5px;border-radius:3px;background:var(--ink-3);opacity:.5;margin:2px auto 14px;padding:0}
+.sheet{padding-top:14px}
+.sheet-x{position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:50%;display:none;place-items:center;color:var(--ink-3);background:var(--field)}
+.sheet-x svg{width:17px;height:17px}
+@media(min-width:760px){.sheet-x{display:grid}.grab{display:none}}
+.sheet{overflow-x:hidden}
+.sheet *{max-width:100%}
 
 /* goal wizard */
 .wiz{padding:4px 0 6px;min-height:270px;display:flex;flex-direction:column}
@@ -443,6 +484,8 @@ const ICON = {
   next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>',
   star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.6l2.5 5.2 5.6.8-4 4 .9 5.6-5-2.7-5 2.7.9-5.6-4-4 5.6-.8z"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6.5-5.7 6.5-10.3A6.5 6.5 0 0 0 5.5 10.7C5.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.3"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3.8M8.5 7.2L12 3.7l3.5 3.5"/><path d="M5.5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5v-6.5"/></svg>',
   clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
@@ -529,6 +572,8 @@ const S = {
   wiz: null,
   wizAI: true,
   sheetIs: null,
+  month: false,
+  showPast: false,
   checkinBusy: false,
   errors: {},
 };
@@ -655,14 +700,14 @@ async function moveAnchor(k, id, time) {
   const row = { id: `${k}:${id}`, day: k, anchor_id: id, time, hidden: false };
   const prev = overrideFor(k, id);
   upsertLocal('day_routines', row); render();
-  try { await saveRow('day_routines', row); S.briefing = null; }
+  try { await saveRow('day_routines', row); S.briefing = null; ensureBriefing(); }
   catch (err) { if (prev) upsertLocal('day_routines', prev); else removeLocal('day_routines', row.id); render(); toast(err.message, true); }
 }
 async function resetAnchor(k, id) {
   const o = overrideFor(k, id);
   if (!o) return;
   removeLocal('day_routines', o.id); render();
-  try { await delRow('day_routines', o.id); } catch (err) { upsertLocal('day_routines', o); render(); toast(err.message, true); }
+  try { await delRow('day_routines', o.id); S.briefing = null; ensureBriefing(); } catch (err) { upsertLocal('day_routines', o); render(); toast(err.message, true); }
 }
 
 const tplOf = (e) => (S.data?.templates || []).find((t) => t.id === e.templateId);
@@ -1075,7 +1120,10 @@ function buildContext() {
     reminders: remindersDue().slice(0, 8).map((r) => ({ title: r.title, due: dueText(r), overdue: isLate(r) })),
     goals: activeGoals().map((g) => { const s = goalStatus(g); return { title: g.title, progress: s.text, status: s.pace, behind: s.behind }; }),
     open_time: freeGaps(k).map((g) => `${fmtT(g.s)}-${fmtT(g.e)}`),
-    routine: { wake: r.wake || null, home: r.home_address || null, anchors: anchorsOn(k).map((a) => `${a.label} at ${fmtT(atTime(k, a.time))}`) },
+    routine: { wake: r.wake || null, home: r.home_address || null, anchors: anchorsOn(k).map((a) => {
+      const at = fmtT(atTime(k, a.time));
+      return a.travel_min ? `${a.label} at ${at}, leave_by ${fmtT(new Date(+atTime(k, a.time) - a.travel_min * 6e4))}` : `${a.label} at ${at}`;
+    }) },
   };
 }
 function hashOf(ctx) {
@@ -1113,7 +1161,7 @@ async function refreshAll() {
   } catch (err) { S.errors.boot = err.message; render(); return; }
   const savedTheme = S.data.settings?.find((x) => x.id === 'theme')?.value?.preset;
   if (savedTheme && THEMES[savedTheme] && savedTheme !== S.theme) applyTheme(savedTheme);
-  if (S.briefing && S.briefing.day !== todayKey()) S.briefing = null;
+  if (S.briefing && S.briefing.day !== todayKey()) { S.briefing = null; S.showPast = false; }
   render();
   if (!S.google) { S.eventsReady = true; render(); return; }
   try {
@@ -1192,7 +1240,7 @@ function viewToday() {
       if (checkinDue()) main += checkinCard();
       const n = nextUp();
       if (n) main += nextHTML(n);
-      main += `<section class="sec"><h3>Today</h3>${lineupHTML(k)}</section>`;
+      main += `<section class="sec">${lineupHTML(k, { rest: true })}</section>`;
     }
   }
   return headerHTML(WD[now.getDay()], `${MO[now.getMonth()]} ${now.getDate()}`, `<button class="icon-btn glass" data-act="settings" aria-label="Settings">${ICON.gear}</button>`)
@@ -1246,7 +1294,7 @@ function nextHTML(e) {
     <div class="count">${fmtDur(Math.max(0, mins))}<small>${countLabel}</small></div>
   </div>`;
 }
-function lineupHTML(k) {
+function lineupHTML(k, opt = {}) {
   const list = eventsOn(k), all = list.filter((e) => e.allDay), timed = list.filter((e) => !e.allDay);
   const now = new Date(), isToday = k === todayKey();
   let h = '';
@@ -1270,13 +1318,35 @@ function lineupHTML(k) {
   items.sort((x, y) => x.at - y.at || (x.kind === 'event' ? 1 : 0) - (y.kind === 'event' ? 1 : 0));
   if (!items.length) return h + `<p class="empty-day">${all.length ? 'Nothing else scheduled.' : 'Nothing on the calendar.'} <button class="link-btn" data-act="add">Add something</button></p>`;
 
+  // On Today, everything that's finished folds away so the screen is only what's left.
+  const isDone = (it) => (it.kind === 'event' ? it.e.end < now : it.at < +now);
+  const rest = opt.rest && isToday;
+  const past = rest && !S.showPast ? items.filter(isDone) : [];
+  const live = rest && !S.showPast ? items.filter((it) => !isDone(it)) : items;
+
+  const draw = (it) => {
+    if (it.kind === 'anchor') return anchorRowHTML(k, it.a, now);
+    if (it.kind === 'leave') return leaveRowHTML(k, it.a);
+    if (it.kind === 'lead') return leadRowHTML(it.e, it.l);
+    return evRow(it.e, catOf(it.e.colorId).c, it.e.end < now, now);
+  };
+
+  if (rest) {
+    if (past.length) h += `<button class="earlier" data-act="show-past"><span>${past.length} earlier today</span>${ICON.down}</button>`;
+    else if (S.showPast && items.some(isDone)) h += `<button class="earlier open" data-act="hide-past"><span>Hide what's done</span>${ICON.down}</button>`;
+    if (!live.length) {
+      return h + `<div class="wrapped glass"><b>That's the day.</b><span>Nothing left on the calendar.</span></div>`;
+    }
+    h += `<h3 class="rest-h">What's left</h3>`;
+    if (S.showPast) { for (const it of items.filter(isDone)) h += draw(it); h += nowHTML(now); }
+    for (const it of live) h += draw(it);
+    return h;
+  }
+
   let placed = !isToday;
   for (const it of items) {
     if (!placed && it.at > +now) { h += nowHTML(now); placed = true; }
-    if (it.kind === 'anchor') { h += anchorRowHTML(k, it.a, now); continue; }
-    if (it.kind === 'leave') { h += leaveRowHTML(k, it.a); continue; }
-    if (it.kind === 'lead') { h += leadRowHTML(it.e, it.l); continue; }
-    h += evRow(it.e, catOf(it.e.colorId).c, it.e.end < now, now);
+    h += draw(it);
   }
   if (!placed) h += nowHTML(now);
   return h;
@@ -1321,16 +1391,17 @@ function evRow(e, c, past, now) {
     <div class="body"><div class="title">${esc(e.title)}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}${extra}</div>
   </div>`;
 }
+function headsHTML() {
+  const heads = S.google && S.eventsReady ? headsUp() : [];
+  if (!heads.length) return '';
+  return `<section class="sec"><h3>Worth prepping for</h3>${heads.map(({ e, k }) => {
+    const prep = e.meta?.prep_min || 0, note = e.meta?.prep_note;
+    const sub = prep >= 60 ? `Prep the night before${note ? `: ${note}` : ''}` : prep ? `Get ready ${fmtDur(prep)}${note ? `: ${note}` : ''}` : (e.allDay ? 'All day' : fmtT(e.start));
+    return `<div class="heads" role="button" tabindex="0" data-act="ev" data-id="${esc(e.id)}"><span class="dot" style="--c:${catOf(e.colorId).c}"></span><div><b>${esc(relDay(k))}: ${esc(e.title)}</b><small>${esc(sub)}</small></div></div>`;
+  }).join('')}</section>`;
+}
 function sideHTML() {
   let h = '';
-  const heads = S.google && S.eventsReady ? headsUp() : [];
-  if (heads.length) {
-    h += `<section class="sec"><h3>Coming up</h3>${heads.map(({ e, k }) => {
-      const prep = e.meta?.prep_min || 0, note = e.meta?.prep_note;
-      const sub = prep >= 60 ? `Prep the night before${note ? `: ${note}` : ''}` : prep ? `Get ready ${fmtDur(prep)}${note ? `: ${note}` : ''}` : (e.allDay ? 'All day' : fmtT(e.start));
-      return `<div class="heads" role="button" tabindex="0" data-act="ev" data-id="${esc(e.id)}"><span class="dot" style="--c:${catOf(e.colorId).c}"></span><div><b>${esc(relDay(k))}: ${esc(e.title)}</b><small>${esc(sub)}</small></div></div>`;
-    }).join('')}</section>`;
-  }
   const due = remindersDue();
   h += `<section class="sec"><div class="sec-h"><h3>Reminders</h3><button class="link-btn" data-act="tab" data-v="reminders">See all</button></div>${due.length ? due.map(remRow).join('') : '<p class="muted">Nothing due today.</p>'}</section>`;
   const risk = activeGoals().filter((g) => { const st = goalStatus(g); return st.behind && !st.notStarted; }).slice(0, 3);
@@ -1365,22 +1436,45 @@ function remRow(r) {
 // Schedule
 function viewSchedule() {
   const ws = S.weekStart, we = addDays(ws, 6);
-  const label = `${MO[ws.getMonth()].slice(0, 3)} ${ws.getDate()} to ${ws.getMonth() !== we.getMonth() ? MO[we.getMonth()].slice(0, 3) + ' ' : ''}${we.getDate()}`;
+  const anchor = parseDay(S.selDay);
+  const label = S.month
+    ? `${MO[anchor.getMonth()]} ${anchor.getFullYear()}`
+    : `${MO[ws.getMonth()].slice(0, 3)} ${ws.getDate()} to ${ws.getMonth() !== we.getMonth() ? MO[we.getMonth()].slice(0, 3) + ' ' : ''}${we.getDate()}`;
   const isThisWeek = dayKey(ws) === dayKey(sow(new Date()));
   const strip = [...Array(7)].map((_, i) => {
     const d = addDays(ws, i), k = dayKey(d);
     const colors = [...new Set(eventsOn(k).sort((a, b) => pri(b) - pri(a)).map((e) => catOf(e.colorId).c))].slice(0, 4);
     return `<button class="wd${k === S.selDay ? ' on' : ''}${k === todayKey() ? ' today' : ''}" data-act="day-sel" data-k="${k}" aria-label="${fmtDay(d)}"><span>${WD[d.getDay()].slice(0, 3)}</span><b>${d.getDate()}</b><i>${colors.map((c) => `<em style="--c:${c}"></em>`).join('')}</i></button>`;
   }).join('');
-  const nav = `<button class="icon-btn glass" data-act="av-open" aria-label="Share availability">${ICON.share}</button>${isThisWeek ? '' : '<button class="link-btn" data-act="week-now" style="margin-right:6px">This week</button>'}<button class="icon-btn glass" data-act="week-prev" aria-label="Previous week">${ICON.prev}</button><button class="icon-btn glass" data-act="week-next" aria-label="Next week">${ICON.next}</button>`;
+  const nav = `<button class="icon-btn glass" data-act="av-open" aria-label="Share availability">${ICON.share}</button>${isThisWeek || S.month ? '' : '<button class="link-btn" data-act="week-now" style="margin-right:6px">This week</button>'}<button class="icon-btn glass" data-act="week-prev" aria-label="Previous">${ICON.prev}</button><button class="icon-btn glass" data-act="week-next" aria-label="Next">${ICON.next}</button>`;
+  const top = S.month ? monthHTML(anchor) : `<div class="week glass">${strip}<span class="pull-hint">pull down for the month</span></div>`;
   let body;
   if (!S.google) body = `<div class="empty-card glass"><p>Connect Google Calendar to see your schedule.</p><button class="btn" data-act="connect">Connect Google Calendar</button></div>`;
   else if (!S.loadedWeeks.has(dayKey(ws)) && !S.eventsReady) body = '<p class="loading">Loading…</p>';
-  else body = `<div class="sched-grid"><section class="sec"><h3>${esc(relDay(S.selDay))}</h3>${lineupHTML(S.selDay)}</section><div>${weekRestHTML(ws)}</div></div>`;
-  return headerHTML('Schedule', label, nav) + `<div class="week glass">${strip}</div>` + body;
+  else body = `<div class="sched-grid"><section class="sec"><h3>${esc(relDay(S.selDay))}</h3>${lineupHTML(S.selDay)}</section><div>${headsHTML()}${weekRestHTML(ws)}</div></div>`;
+  return headerHTML('Schedule', label, nav) + top + body;
 }
 
 // The rest of the week, for screens with room for it
+function stepSchedule(dir) {
+  if (S.month) {
+    const a = parseDay(S.selDay);
+    const d = new Date(a.getFullYear(), a.getMonth() + dir, 1);
+    S.selDay = dayKey(d); S.weekStart = sow(d);
+    for (let i = 0; i < 6; i++) ensureWeek(addDays(sow(d), i * 7));
+  } else {
+    S.weekStart = addDays(S.weekStart, 7 * dir);
+    S.selDay = dayKey(S.weekStart);
+    ensureWeek(S.weekStart);
+  }
+  render();
+}
+// Opening the month needs the weeks around it loaded
+function ensureMonth() {
+  const a = parseDay(S.selDay), start = sow(new Date(a.getFullYear(), a.getMonth(), 1));
+  for (let i = 0; i < 6; i++) ensureWeek(addDays(start, i * 7));
+}
+
 function weekRestHTML(ws) {
   const days = [...Array(7)].map((_, i) => dayKey(addDays(ws, i))).filter((k) => k !== S.selDay);
   const out = days.map((k) => {
@@ -1456,7 +1550,7 @@ function viewReminders() {
 // ---------- sheets ----------
 function openSheet(html) {
   const sh = $('#sheet');
-  sh.innerHTML = `<div class="grab"></div>${html}`;
+  sh.innerHTML = `<button class="grab" data-act="close" aria-label="Close"></button><button class="sheet-x" data-act="close" aria-label="Close">${ICON.x}</button>${html}`;
   sh.scrollTop = 0;
   $('#scrim').classList.add('show');
   requestAnimationFrame(() => sh.classList.add('show'));
@@ -1540,7 +1634,7 @@ async function saveEventForm(btn) {
     const j = await api('/api/calendar', { method: 'POST', body: { action: 'create', event: { title, start, end, allDay, colorId: segVal('ef-color'), location: val('ef-loc'), goalId: val('ef-goal') || null, templateId: tpl?.id || null }, meta, travel: travelBlock } });
     S.events.set(j.event.id, normEv(j.event));
     if (j.travel) S.events.set(j.travel.id, normEv(j.travel));
-    closeSheet(); render(); toast('Added to calendar');
+    closeSheet(); S.briefing = null; render(); toast('Added to calendar');
     runTriage();
   } catch (err) { btn.disabled = false; btn.textContent = 'Add to calendar'; toast(err.message, true); }
 }
@@ -1786,8 +1880,9 @@ function nextLocal(a) {
   }
   if (a.type === 'streak' && !a.per_week) return { field: 'per_week', question: 'How many days a week is realistic?', hint: 'Be honest, not ambitious', input: 'number', suggest: '3' };
   if (a.type === 'milestone' && !a.steps) return { field: 'steps', question: 'What are the steps? One per line.', input: 'text' };
-  if (!a.start_date) return { field: 'start_date', question: 'When does this start?', hint: 'Leave it blank to start today', input: 'date' };
-  if (!a.deadline && a.type !== 'streak') return { field: 'deadline', question: 'When do you want it done?', hint: 'Blank is fine if there\'s no date', input: 'date' };
+  // Optional fields: an empty answer still counts as answered, or Skip loops forever.
+  if (!('start_date' in a)) return { field: 'start_date', question: 'When does this start?', hint: 'Leave it blank to start today', input: 'date' };
+  if (!('deadline' in a) && a.type !== 'streak') return { field: 'deadline', question: 'When do you want it done?', hint: 'Blank is fine if there\'s no date', input: 'date' };
   return { field: 'done', question: 'Here\'s what I\'ve got.' };
 }
 async function wizAsk() {
@@ -2063,10 +2158,13 @@ const A = {
   'ck-del': (el) => { const e = S.events.get(el.dataset.id); const l = [...(e?.meta?.checklist || [])]; l.splice(+el.dataset.i, 1); saveChecklist(el.dataset.id, l); },
   'ck-add': (el) => { const t = val('ck-new'); if (!t) return; const e = S.events.get(el.dataset.id); saveChecklist(el.dataset.id, [...(e?.meta?.checklist || []), { t, done: false }]); },
   'log-ev': (el) => { const e = S.events.get(el.dataset.id); if (e) { closeSheet(); logFromEvent(e); } },
-  'day-sel': (el) => { S.selDay = el.dataset.k; render(); },
-  'week-prev': () => { S.weekStart = addDays(S.weekStart, -7); S.selDay = dayKey(S.weekStart); ensureWeek(S.weekStart); render(); },
-  'week-next': () => { S.weekStart = addDays(S.weekStart, 7); S.selDay = dayKey(S.weekStart); ensureWeek(S.weekStart); render(); },
+  'day-sel': (el) => { S.selDay = el.dataset.k; S.weekStart = sow(parseDay(el.dataset.k)); ensureWeek(S.weekStart); render(); },
+  'week-prev': () => stepSchedule(-1),
+  'week-next': () => stepSchedule(1),
   'week-now': () => { S.weekStart = sow(new Date()); S.selDay = todayKey(); ensureWeek(S.weekStart); render(); },
+  'month-close': () => { S.month = false; render(); },
+  'show-past': () => { S.showPast = true; render(); },
+  'hide-past': () => { S.showPast = false; render(); },
   seg: (el) => {
     el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el));
     if (el.parentElement.id === 'gf-type') setGoalType(el.dataset.v);
@@ -2195,6 +2293,77 @@ function signOut() {
   render();
 }
 
+// ---------- pull the week strip down into a month ----------
+const MON = { y0: 0, dy: 0, live: false };
+function monthDown(ev) {
+  if (ev.target.closest('button') && !S.month) return; // let day taps through
+  MON.y0 = ev.clientY; MON.dy = 0; MON.live = true;
+}
+function monthMove(ev) {
+  if (!MON.live) return;
+  MON.dy = ev.clientY - MON.y0;
+  if (Math.abs(MON.dy) > 14) {
+    const strip = $('.week');
+    if (strip) strip.style.setProperty('--pull', Math.max(0, Math.min(1, Math.abs(MON.dy) / 90)));
+  }
+}
+function monthUp(cancel) {
+  if (!MON.live) return;
+  MON.live = false;
+  const strip = $('.week');
+  if (strip) strip.style.removeProperty('--pull');
+  if (cancel) return;
+  if (!S.month && MON.dy > 45) { S.month = true; ensureMonth(); render(); }
+  else if (S.month && MON.dy < -45) { S.month = false; render(); }
+}
+function monthHTML(anchor) {
+  const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  const start = sow(first);
+  const cells = [];
+  for (let i = 0; i < 42; i++) {
+    const d = addDays(start, i), k = dayKey(d);
+    if (i >= 35 && d.getMonth() !== anchor.getMonth()) break;
+    const evs = eventsOn(k);
+    const colors = [...new Set(evs.sort((a, b) => pri(b) - pri(a)).map((e) => catOf(e.colorId).c))].slice(0, 3);
+    cells.push(`<button class="md${d.getMonth() === anchor.getMonth() ? '' : ' off'}${k === S.selDay ? ' on' : ''}${k === todayKey() ? ' today' : ''}" data-act="day-sel" data-k="${k}">
+      <b>${d.getDate()}</b><i>${colors.map((c) => `<em style="--c:${c}"></em>`).join('')}</i></button>`);
+  }
+  return `<div class="month glass">
+    <div class="mhead">${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((x) => `<span>${x}</span>`).join('')}</div>
+    <div class="mgrid">${cells.join('')}</div>
+    <button class="mclose" data-act="month-close">Back to the week</button></div>`;
+}
+
+// ---------- pull a sheet down to dismiss ----------
+const SH = { y0: 0, dy: 0, live: false, fromTop: false };
+function sheetDown(ev) {
+  const sh = $('#sheet');
+  if (!sh.classList.contains('show')) return;
+  const onGrab = !!ev.target.closest('.grab') || !!ev.target.closest('.sheet-h');
+  if (!onGrab && sh.scrollTop > 2) return;
+  if (ev.target.closest('input, textarea, select')) return;
+  SH.y0 = ev.clientY; SH.dy = 0; SH.live = true; SH.fromTop = true;
+  sh.style.transition = 'none';
+}
+function sheetMove(ev) {
+  if (!SH.live) return;
+  const sh = $('#sheet');
+  SH.dy = ev.clientY - SH.y0;
+  if (SH.dy < 0) { SH.dy = SH.dy / 4; }
+  if (SH.dy > 3 && sh.scrollTop > 2) { sheetUp(true); return; }
+  sh.style.transform = window.innerWidth >= 760 ? `translate(-50%,calc(-50% + ${SH.dy}px))` : `translateY(${Math.max(0, SH.dy)}px)`;
+  $('#scrim').style.opacity = String(Math.max(0, 1 - SH.dy / 420));
+}
+function sheetUp(cancel) {
+  if (!SH.live) return;
+  SH.live = false;
+  const sh = $('#sheet');
+  sh.style.transition = '';
+  sh.style.transform = '';
+  $('#scrim').style.opacity = '';
+  if (!cancel && SH.dy > 110) closeSheet();
+}
+
 // ---------- drag to move: long-press, slide, release ----------
 const DRAG = { el: null, timer: null, startY: 0, y0: 0, baseMin: 0, mins: 0, live: false, moved: false, endedAt: 0, kind: null, id: null, k: null };
 const PX_PER_5 = 7; // finger travel for a 5 minute nudge
@@ -2257,23 +2426,26 @@ async function dragEnd() {
   try {
     const j = await api('/api/calendar', { method: 'POST', body: { action: 'update', id, patch: { start: localIso(ns), end: localIso(ne), allDay: false } } });
     S.events.set(id, normEv(j.event));
-    S.briefing = null; render();
+    S.briefing = null; render(); ensureBriefing();
     toast(`Moved to ${fmtT(ns)}`);
   } catch (err) { Object.assign(e, before); render(); toast(err.message, true); }
 }
 
 document.addEventListener('pointerdown', (ev) => {
   if (ev.button > 0) return;
+  if (ev.target.closest('#sheet')) { sheetDown(ev); return; }
+  const strip = ev.target.closest('.week');
+  if (strip) { monthDown(ev); return; }
   const el = ev.target.closest('[data-drag]');
   if (!el || ev.target.closest('button')) return;
   dragStart(el, ev.clientY);
 }, { passive: true });
-document.addEventListener('pointermove', (ev) => dragMove(ev.clientY), { passive: true });
-document.addEventListener('pointerup', dragEnd);
-document.addEventListener('pointercancel', dragCancel);
+document.addEventListener('pointermove', (ev) => { sheetMove(ev); monthMove(ev); dragMove(ev.clientY); }, { passive: true });
+document.addEventListener('pointerup', () => { sheetUp(); monthUp(); dragEnd(); });
+document.addEventListener('pointercancel', () => { sheetUp(true); monthUp(true); dragCancel(); });
 document.addEventListener('scroll', () => { if (!DRAG.live) dragCancel(); }, true);
 // iOS scrolls the page unless we say otherwise mid-drag
-document.addEventListener('touchmove', (ev) => { if (DRAG.live) ev.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', (ev) => { if (DRAG.live || (SH.live && SH.dy > 0) || MON.live) ev.preventDefault(); }, { passive: false });
 
 document.addEventListener('click', (ev) => {
   // Swallow only the ghost click that follows a drag, never a real tap later on.

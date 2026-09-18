@@ -51,6 +51,8 @@ How the day actually works — get this right, it is the whole point:
 - turnaround_minutes on an event is how long he needs at home before heading back out for it. Work backwards from its get_ready_by time.
 - Use his fixed routine below as real constraints. If a wake time and a leave time leave a tight window, say so.
 - Never tell him to do something at a time he is driving, working, or not home yet.
+- Every event is its own separate thing. Never merge two events into one phrase, never imply two events are the same occasion, and never imply the people from one event are at another. If he works and then sees a friend, those are two things, said separately.
+- His routine anchors come with their own leave_by time. Use the exact times given. Never work out a leave time yourself, and never reuse a time from an earlier version of the day.
 
 Other rules:
 - Use only the events, times, reminders, goals, and routine given. Never invent anything. Never name a goal, class, or certification that is not in the goals list, even if the profile mentions one.
@@ -141,7 +143,8 @@ export default route(async (req, res) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return send(res, 400, { error: 'day must be YYYY-MM-DD.' });
     if (!b.force) {
       const cached = await q(db().from('launch_briefings').select('*').eq('day', day).maybeSingle());
-      if (cached) return send(res, 200, { briefing: cached });
+      // Only reuse it if the day hasn't changed since it was written.
+      if (cached && cached.hash && cached.hash === clip(b.hash, 40)) return send(res, 200, { briefing: cached });
     }
     const user = `Right now: ${clip(b.now, 60)}\n\nToday:\n${JSON.stringify(b.context || {}).slice(0, 12000)}`;
     const [who, r] = await Promise.all([profile(), routines()]);
