@@ -335,6 +335,32 @@ details.more[open] summary{margin-bottom:4px}
 .mclose svg{width:15px;height:15px;transform:rotate(180deg)}
 .sched-grid{margin-top:26px}
 
+/* month peek */
+.md i u{font-size:9px;color:var(--ink-3);text-decoration:none;line-height:1}
+.md.big b{color:var(--ink);font-weight:800}
+.mpeek{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.mpeek>b{display:block;font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:8px}
+.mchips{display:flex;flex-wrap:wrap;gap:6px}
+.mchip{display:inline-flex;align-items:baseline;gap:6px;padding:6px 11px;border-radius:999px;font-size:13px;
+  background:color-mix(in srgb,var(--c) 15%,transparent);border:1px solid color-mix(in srgb,var(--c) 32%,transparent)}
+.mchip i{font-style:normal;font-size:11px;color:var(--ink-3)}
+.mfree{font-size:13px;color:var(--ink-3)}
+
+/* the week as shapes */
+.wticks{display:flex;justify-content:space-between;padding:0 0 6px 58px;font-size:10px;color:var(--ink-3);letter-spacing:.03em}
+.wtracks{display:grid;gap:2px}
+.wtrack{display:grid;grid-template-columns:50px minmax(0,1fr);gap:8px;align-items:center;width:100%;padding:7px 8px 7px 0;border-radius:12px}
+.wtrack.on{background:var(--hi)}
+.wlabel{display:flex;align-items:baseline;gap:6px;justify-content:flex-end;padding-left:8px}
+.wlabel em{font-style:normal;font-size:11px;color:var(--ink-3)}
+.wlabel b{font-size:16px;font-weight:650}
+.wtrack.today .wlabel b{color:var(--dawn)}
+.wbar{position:relative;height:28px;border-radius:9px;background:var(--field);overflow:hidden}
+.wseg{position:absolute;top:4px;bottom:4px;background:var(--c);border-radius:4px;opacity:.9}
+.wfree{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--ink-3)}
+.wnow{position:absolute;top:0;bottom:0;width:2px;background:var(--dawn);box-shadow:0 0 6px var(--dawn)}
+.wall{grid-column:2;font-size:11px;color:var(--ink-3);padding:2px 0 0 2px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* today: what's left */
 .rest-h{font-size:18px;font-weight:650;margin:2px 0 10px}
 .earlier{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:12px 16px;border-radius:14px;
@@ -404,9 +430,8 @@ details.more[open] summary{margin-bottom:4px}
 
 /* availability */
 .av-day{margin-bottom:18px}
-.av-day h4{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--ink-3);margin-bottom:8px}
-.av-line{display:flex;align-items:center;gap:11px;font-size:17px;padding:4px 0}
-.av-line i{width:7px;height:7px;border-radius:50%;background:var(--dawn);flex:none}
+.av-day h4{font-size:15px;font-weight:700;color:var(--dawn);margin-bottom:4px}
+.av-line{font-size:17px;padding:4px 0}
 .av-none{font-size:14px;color:var(--ink-3)}
 .av-prev{border-radius:18px;padding:16px;max-height:320px;overflow:auto;margin-bottom:16px}
 
@@ -653,16 +678,18 @@ function leadOf(e) {
   const ready = new Date(leave - prep * 6e4);
   return { prep, travel, ready, leave };
 }
+// Prep for a repeating shift isn't news. Only one-offs, and never the same thing twice.
 function headsUp() {
-  const out = [];
-  for (let i = 1; i <= 3; i++) {
+  const out = [], seen = new Set();
+  for (let i = 1; i <= 4; i++) {
     const k = dayKey(addDays(new Date(), i));
     for (const e of eventsOn(k)) {
       if (dayKey(e.start) !== k && !e.allDay) continue;
-      if (pri(e) === 3 || (e.meta?.prep_min || 0) >= 45) out.push({ e, k });
+      if (e.recurring || seen.has(e.title.toLowerCase())) continue;
+      if (pri(e) === 3 || (e.meta?.prep_min || 0) >= 45) { seen.add(e.title.toLowerCase()); out.push({ e, k }); }
     }
   }
-  return out.slice(0, 5);
+  return out.slice(0, 4);
 }
 function freeGaps(k) {
   const d0 = parseDay(k), r = routines();
@@ -928,24 +955,35 @@ function avDays(range) {
   return today.getDay() === 6 ? [dayKey(today), dayKey(addDays(today, 1))] : today.getDay() === 0 ? [dayKey(today)] : [dayKey(sat), dayKey(addDays(sat, 1))];
 }
 // Free means actually free: after the drive home, before the next get-ready.
+const up30 = (d) => new Date(Math.ceil(+d / 18e5) * 18e5);
+const down30 = (d) => new Date(Math.floor(+d / 18e5) * 18e5);
+
+// Nobody says "10:30am to 12:40pm". They say "after 6" or "anytime".
+function phraseWindow(g, floor, ceil) {
+  const open = +g.s <= floor + 6e4, close = +g.e >= ceil - 6e4;
+  if (open && close) return 'anytime';
+  if (close) return `after ${fmtT(g.s)}`;
+  if (open) return `until ${fmtT(g.e)}`;
+  return `${fmtT(g.s)} to ${fmtT(g.e)}`;
+}
 function availability(range, minMin = 60) {
-  const from = S.avFrom || '08:00';
+  const from = S.avFrom || '08:00', r = routines();
   return avDays(range).map((k) => {
-    const floor = +atTime(k, from);
+    const floor = +atTime(k, from), ceil = +atTime(k, r.day_end || '22:00');
     return {
       k,
       windows: freeGaps(k)
-        .map((g) => ({ s: new Date(Math.max(+g.s, floor)), e: g.e }))
+        .map((g) => ({ s: up30(new Date(Math.max(+g.s, floor))), e: down30(g.e) }))
         .filter((g) => g.e - g.s >= minMin * 6e4)
-        .map((g) => ({ s: g.s, e: g.e, label: `${fmtT(g.s)} – ${fmtT(g.e)}` })),
+        .map((g) => ({ s: g.s, e: g.e, label: phraseWindow(g, floor, ceil) })),
     };
   });
 }
 function avPreview(days) {
   return days.filter((d) => d.windows.length).map((d) => {
     const dt = parseDay(d.k);
-    return `<div class="av-day"><h4>${WD[dt.getDay()].slice(0, 3).toUpperCase()} ${MO[dt.getMonth()].slice(0, 3).toUpperCase()} ${dt.getDate()}</h4>${
-      d.windows.map((w) => `<div class="av-line"><i></i>${esc(w.label)}</div>`).join('')}</div>`;
+    return `<div class="av-day"><h4>${esc(WD[dt.getDay()])}</h4>${
+      d.windows.map((w) => `<div class="av-line">${esc(w.label)}</div>`).join('')}</div>`;
   }).join('') || '<span class="av-none">Nothing open in this stretch.</span>';
 }
 function openAvSheet(range = S.avRange || 'weekend') {
@@ -966,16 +1004,16 @@ function avCanvas(range) {
   const days = availability(range).filter((d) => d.windows.length);
   const t = THEMES[S.theme] || THEMES.midnight;
   const P = 54, S2 = 2;
-  let H = P + 62;
-  for (const d of days) H += 40 + d.windows.length * 46 + 16;
-  H += P - 36;
+  let H = P + 60;
+  for (const d of days) H += 36 + d.windows.length * 40 + 14;
+  H += P - 30;
   const cv = document.createElement('canvas');
   const m = cv.getContext('2d');
   // Measure first so the image hugs its content in Messages.
   m.font = '700 34px -apple-system, "Helvetica Neue", Arial, sans-serif';
   let wide = m.measureText(AV_TITLE[range]).width;
-  m.font = '28px -apple-system, "Helvetica Neue", Arial, sans-serif';
-  for (const d of days) for (const win of d.windows) wide = Math.max(wide, m.measureText(win.label).width + 22);
+  m.font = '27px -apple-system, "Helvetica Neue", Arial, sans-serif';
+  for (const d of days) for (const win of d.windows) wide = Math.max(wide, m.measureText(win.label).width);
   const W = Math.round(Math.max(440, Math.min(760, wide + P * 2)));
   cv.width = W * S2; cv.height = H * S2;
   const x = cv.getContext('2d');
@@ -989,22 +1027,20 @@ function avCanvas(range) {
   x.font = '700 34px -apple-system, "Helvetica Neue", Arial, sans-serif';
   x.fillText(AV_TITLE[range], P, P + 30);
 
-  let y = P + 78;
+  let y = P + 76;
   for (const d of days) {
     const dt = parseDay(d.k);
-    x.fillStyle = t.v['ink-3'];
-    x.font = '700 16px -apple-system, "Helvetica Neue", Arial, sans-serif';
-    x.fillText(`${WD[dt.getDay()].slice(0, 3).toUpperCase()}  ${MO[dt.getMonth()].slice(0, 3).toUpperCase()} ${dt.getDate()}`, P, y);
-    y += 34;
+    x.fillStyle = t.v.dawn;
+    x.font = '700 22px -apple-system, "Helvetica Neue", Arial, sans-serif';
+    x.fillText(WD[dt.getDay()], P, y);
+    y += 36;
     for (const win of d.windows) {
-      x.fillStyle = t.v.dawn;
-      x.beginPath(); x.arc(P + 5, y - 9, 4.5, 0, Math.PI * 2); x.fill();
       x.fillStyle = t.v.ink;
-      x.font = '28px -apple-system, "Helvetica Neue", Arial, sans-serif';
-      x.fillText(win.label, P + 22, y);
-      y += 46;
+      x.font = '27px -apple-system, "Helvetica Neue", Arial, sans-serif';
+      x.fillText(win.label, P, y);
+      y += 40;
     }
-    y += 16;
+    y += 14;
   }
   return cv;
 }
@@ -1492,15 +1528,32 @@ function ensureMonth() {
 }
 
 function weekRestHTML(ws) {
-  const days = [...Array(7)].map((_, i) => dayKey(addDays(ws, i))).filter((k) => k !== S.selDay);
-  const out = days.map((k) => {
-    const evs = eventsOn(k).sort((a, b) => pri(b) - pri(a)).slice(0, 3);
-    if (!evs.length) return '';
-    return `<div class="heads" role="button" tabindex="0" data-act="day-sel" data-k="${k}">
-      <span class="dot" style="--c:${catOf(evs[0].colorId).c}"></span>
-      <div><b>${esc(relDay(k))}</b><small>${esc(evs.map((e) => e.title).join(' · '))}</small></div></div>`;
-  }).filter(Boolean).join('');
-  return out ? `<section class="sec"><h3>Rest of the week</h3>${out}</section>` : '';
+  const r = routines();
+  const d0h = Number((r.wake || '06:00').split(':')[0]);
+  const d1h = Number((r.day_end || '22:00').split(':')[0]) + 1;
+  const span = (d1h - d0h) * 60;
+  const now = new Date();
+  const rows = [...Array(7)].map((_, i) => {
+    const d = addDays(ws, i), k = dayKey(d);
+    const evs = eventsOn(k);
+    const segs = evs.filter((e) => !e.allDay).map((e) => {
+      const from = Math.max(0, (e.start.getHours() * 60 + e.start.getMinutes()) - d0h * 60);
+      const to = Math.min(span, (dayKey(e.end) === k ? e.end.getHours() * 60 + e.end.getMinutes() : d1h * 60) - d0h * 60);
+      const w = Math.max(1.5, ((to - from) / span) * 100);
+      return `<span class="wseg" style="--c:${catOf(e.colorId).c};left:${(from / span) * 100}%;width:${w}%"></span>`;
+    }).join('');
+    const allDay = evs.filter((e) => e.allDay).map((e) => e.title);
+    const nowPct = k === todayKey() ? ((now.getHours() * 60 + now.getMinutes()) - d0h * 60) / span * 100 : null;
+    return `<button class="wtrack${k === S.selDay ? ' on' : ''}${k === todayKey() ? ' today' : ''}" data-act="day-sel" data-k="${k}">
+      <span class="wlabel"><em>${WD[d.getDay()].slice(0, 3)}</em><b>${d.getDate()}</b></span>
+      <span class="wbar">${segs || '<span class="wfree">free</span>'}${nowPct != null && nowPct >= 0 && nowPct <= 100 ? `<span class="wnow" style="left:${nowPct}%"></span>` : ''}</span>
+      ${allDay.length ? `<span class="wall">${esc(allDay.join(', '))}</span>` : ''}
+    </button>`;
+  }).join('');
+  const ticks = ['wake', 'noon', '6pm', 'night'];
+  return `<section class="sec"><h3>The week at a glance</h3>
+    <div class="wticks"><span>${d0h % 12 || 12}am</span><span>noon</span><span>6pm</span><span>${d1h - 1 > 12 ? (d1h - 1) % 12 : d1h - 1}pm</span></div>
+    <div class="wtracks">${rows}</div></section>`;
 }
 
 // Goals
@@ -2343,13 +2396,20 @@ function monthHTML(anchor) {
     const d = addDays(start, i), k = dayKey(d);
     if (i >= 35 && d.getMonth() !== anchor.getMonth()) break;
     const evs = eventsOn(k);
-    const colors = [...new Set(evs.sort((a, b) => pri(b) - pri(a)).map((e) => catOf(e.colorId).c))].slice(0, 3);
-    cells.push(`<button class="md${d.getMonth() === anchor.getMonth() ? '' : ' off'}${k === S.selDay ? ' on' : ''}${k === todayKey() ? ' today' : ''}" data-act="day-sel" data-k="${k}">
-      <b>${d.getDate()}</b><i>${colors.map((c) => `<em style="--c:${c}"></em>`).join('')}</i></button>`);
+    const colors = [...new Set(evs.sort((a, b) => pri(b) - pri(a)).map((e) => catOf(e.colorId).c))];
+    const shown = colors.slice(0, 3);
+    cells.push(`<button class="md${d.getMonth() === anchor.getMonth() ? '' : ' off'}${k === S.selDay ? ' on' : ''}${k === todayKey() ? ' today' : ''}${evs.some((e) => pri(e) === 3) ? ' big' : ''}" data-act="day-sel" data-k="${k}">
+      <b>${d.getDate()}</b><i>${shown.map((c) => `<em style="--c:${c}"></em>`).join('')}${colors.length > 3 ? '<u>+</u>' : ''}</i></button>`);
   }
+  const sel = eventsOn(S.selDay);
+  const peek = `<div class="mpeek"><b>${esc(relDay(S.selDay))}</b>${
+    sel.length
+      ? `<div class="mchips">${sel.slice(0, 6).map((e) => `<span class="mchip" style="--c:${catOf(e.colorId).c}">${e.allDay ? '' : `<i>${esc(fmtT(e.start))}</i>`}${esc(e.title)}</span>`).join('')}</div>`
+      : '<span class="mfree">Nothing scheduled</span>'}</div>`;
   return `<div class="month glass">
     <div class="mhead">${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((x) => `<span>${x}</span>`).join('')}</div>
     <div class="mgrid">${cells.join('')}</div>
+    ${peek}
     <button class="mclose" data-act="month-close">${ICON.down}<span>Week</span></button></div>`;
 }
 
